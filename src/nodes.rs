@@ -2,62 +2,113 @@ use std::error::Error;
 use std::fs;
 use std::env;
 use std::process;
+use std::path::PathBuf;
+use std::fs::File;
+use std::io::Read;
+use std::alloc::System;
+use crate::engine::Program;
+use std::collections::HashMap;
+use std::string::String;
 
-mod nodes {
-    pub fn load_class(path : &String) {
+
+//Represents a loaded script file.
+pub struct Script {
+    identifier : String,
+    imports : HashMap<String, Script>,
+    fields : HashMap<String, ScriptValue>,
+    functions : HashMap<String, Function>
+}
+
+impl Script {
+
+    fn new(program : Program, contents : Vec<Vec<String>>) -> Script {
 
     }
 
-    //Represents a fully loaded class.
-    pub struct Script {
-        pub imports : Vec<Script>,
-        pub script_type : ScriptType,
-        pub identifier : String
-    }
+}
 
-    enum ScriptType {
-        Class,
-        Singleton,
-        Enum,
-        Interface,
-        Annotation,
-        Unknown
-    }
+//Trait for values
+pub trait Value<T> {
+    fn get_value() -> T;
+}
 
-    impl Script {
+//Represents a variable or constant.
+pub struct ScriptValue {
+    identifier : String,
+    is_const : bool
+}
 
-        pub fn new(path : String) -> Script {
+//Trait to be used for all functions.
+pub trait Function {
+    fn execute_pre(&self, arguments : Vec<Value<T>>) {
+        let ids = self.get_ids();
+        let mut args : HashMap<String, Value<T>> = HashMap::new();
 
-            let file_path : String = path.to_owned().push(".silicon");
-            let contents : String = fs::read_to_string(&file_path).unwrap_or_else( |err|{
-                println!("File {} is not a valid script file!", file_path);
-                process::exit(2)
-            });
-
-            let mut class = Script {
-                imports : Vec::new(),
-                script_type : Unknown,
-                identifier : ""
-            };
-
-            return class
+        for i in ids.len() {
+            args.insert(ids[i], arguments[i])
         }
 
-        fn parse() {
 
-        }
     }
 
-    fn remove_file_from_path(path : String) -> String {
-        let package_path : String;
-        let mut split: Vec<&str> = path.copy.split("/").collect();
-        split.pop();
+    fn get_ids(&self) -> &Vec<String>;
 
-        for slice in &split  {
-            package_path.push_str(slice);
-            package_path.push_str("/")
+    fn execute(&self, args : HashMap<String, Value<T>>);
+}
+
+//Represents a function.
+pub struct ScriptFunction {
+    identifier : String
+}
+
+pub enum ScriptType {
+    Class,
+    Singleton,
+    Enum,
+    Interface,
+    Annotation,
+    Unknown
+}
+
+/*
+    Code for native functions and variables.
+*/
+
+pub struct NativeFunctions {
+    functions : HashMap<String, Function>
+}
+
+impl NativeFunctions {
+    fn new() -> NativeFunctions {
+
+        let mut natives = HashMap::new();
+
+        natives.insert("println", PrintFunc {arg_ids : vec!["message".to_string()]});
+
+        NativeFunctions {
+            functions: natives
         }
+    }
+}
 
-        return package_path
+//Print function
+pub struct PrintFunc {
+    arg_ids : Vec<String>
+}
+
+impl Function for PrintFunc {
+    fn get_ids(&self) -> &Vec<String> {
+        &self.arg_ids
+    }
+
+    fn execute(&self, args : Vec<Value<T>>) {
+        let mut output : String;
+        if args[&0] as String {
+            println!("{}", args[&0])
+        }
+        else {
+            println!("Expected string!");
+            process::exit(2)
+        }
     }
 }

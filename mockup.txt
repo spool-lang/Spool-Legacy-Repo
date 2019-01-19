@@ -1,0 +1,91 @@
+#Declares a single-line comment.
+
+##
+Declares a multi-line comment.
+##
+
+##
+Keywords:
+"import" imports a class.
+"alias" declares an alternative name for an import for when two imported classes have the same name.
+"class" declares a silicon class.
+"var" declares a value that is mutable.
+"const" declares a value that is immutable once assigned.
+"func" declares a function.
+"return" returns the specified value.
+"ans" is a special variable that represents the results of the last declaration/operation.
+"if" and "else" work as expected; "if else" is not shown.
+"or" and "and" are used in place of "||" and "&&" operators.
+"for" declares code to be looped through multiple times.
+"operator" declares an operator overload.
+"assign" declares an assignment function.
+
+Notable symbols:
+"->" declares return type.
+"<>" type declaration.
+"[]" array declaration.
+##
+
+import package/Foo
+import package/Bar
+import package/subpackage/Bar alias OtherBar
+
+class MockUp {
+
+    var name : String;
+    var amount = 1;
+    const REAL_BOY : Boolean = true;
+
+    func makeBar() -> Bar{
+        return new Bar();
+    }
+
+    func makeOtherBar() -> OtherBar {
+        return new OtherBar();
+    }
+
+    func addThree(const x : Int, const y : Int, const z : Int) -> Int{
+        x + y;
+        return ans + z;
+    }
+
+    func flowControl(const name : String) {
+
+        if (name == this.name or name == "Pinocchio") {
+            amount += 278;
+        }
+        else {
+            const foos : <Foo>[] = [Foo(1), Foo(2), Foo(3)];
+
+            for (foo in foos) {
+                Foo.doFooThing();
+                Foo.value = addThree(1, 7, 23);
+            }
+        }
+    }
+}
+
+class Fraction {
+
+    var numerator : Int;
+    var denominator : Int;
+
+    constructor(const num : Int, const den : Int) {
+        numerator = num;
+        denominator = den;
+    }
+
+    constructor(const num : Int) {
+        construct(num, 1);
+    }
+
+    operator *(const fraction : Fraction) -> Fraction {
+        const num = fraction.numerator * this.numerator;
+        const den = fraction.denominator * this.denominator;
+        return new Fraction(num, den);
+    }
+
+    assign -> Float {
+        return numerator/denominator;
+    }
+}

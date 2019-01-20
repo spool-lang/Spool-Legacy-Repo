@@ -40,7 +40,6 @@ impl Filter for SiliconFilter {
         else if self.comment_mode == CommentType::SingleLine {
             let newline = match *c {
                 '\n' => true,
-                '\r' => true,
 
                 '#' => {
                     self.comment_mode = CommentType::MultiLine;
@@ -90,7 +89,7 @@ fn part() -> (bool, bool) {
 }
 
 //Comment type
-enum CommentType {
+pub enum CommentType {
     Off,
     SingleLine,
     MultiLine,

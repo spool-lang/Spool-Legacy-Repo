@@ -1,10 +1,14 @@
 use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
-use crate::nodes::OldScript;
 use crate::nodes::ScriptType;
 use std::fs::File;
 use std::env;
 use std::process;
+use std::io::Read;
+use tokesies::*;
+use tokesies::Token;
+use crate::lex::SiliconFilter;
+use crate::lex::CommentType;
 
 pub struct Program {
     root_dir : PathBuf
@@ -24,6 +28,18 @@ pub fn run(path : PathBuf) {
     };
 
     let mut  main_class_file : File = open_script(&path);
+    let mut contents;
+    main_class_file.read_to_string(contents);
+
+    let tokens = FilteredTokenizer::new(SiliconFilter {
+        comment_mode: CommentType::Off
+    }, contents);
+    let tokens : Vec<Token> = tokens.collect();
+
+    for i in tokens.len()  {
+        let term = (tokens.get(i) as Token).term();
+        print!("{}", term)
+    }
 
     println!("{:?}", path);
     println!("{:?}", root.root_dir);

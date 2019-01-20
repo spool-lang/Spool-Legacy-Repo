@@ -2,7 +2,7 @@ use tokesies::filters::Filter;
 
 //Tokenizer.
 pub struct SiliconFilter {
-    comment_mode : CommentType
+    pub comment_mode : CommentType
 }
 
 impl Filter for SiliconFilter {
@@ -10,33 +10,40 @@ impl Filter for SiliconFilter {
     fn on_char(&self, c: &char) -> (bool, bool) {
         let mut result : (bool, bool);
 
-        if self.comment_mode == CommentType::Off {
-            result = match *c {
-                ' ' => drop(),
-                '\t' => drop(),
-                '\n' => drop(),
-                '\r' => drop(),
-                '\u{C}' => drop(),
+        match self.comment_mode {
+            CommentType::Off => {
+                result = match *c {
+                    ' ' => drop(),
+                    '\t' => drop(),
+                    '\n' => drop(),
+                    '\r' => drop(),
+                    '\u{C}' => drop(),
 
-                ';' => keep(),
-                '_' => part(),
-                '{' => keep(),
-                '}' => keep(),
-                '(' => keep(),
-                '[' => keep(),
-                ']' => keep(),
-                '<' => keep(),
-                '>' => keep(),
-                '!' => keep(),
+                    ';' => keep(),
+                    '_' => part(),
+                    '{' => keep(),
+                    '}' => keep(),
+                    '(' => keep(),
+                    '[' => keep(),
+                    ']' => keep(),
+                    '<' => keep(),
+                    '>' => keep(),
+                    '!' => part(),
+                    '"' => keep(),
 
+                    /*
                 '#' => {
                     self.comment_mode = CommentType::SingleLine;
                     drop()
                 },
+                */
 
-                _ => keep()
+                    _ => part()
+                }
             }
+            _ => result = drop()
         }
+        /*
         else if self.comment_mode == CommentType::SingleLine {
             let newline = match *c {
                 '\n' => true,
@@ -71,6 +78,7 @@ impl Filter for SiliconFilter {
             result = drop()
         }
 
+        */
         return result
     }
 }

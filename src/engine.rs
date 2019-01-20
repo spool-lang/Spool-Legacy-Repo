@@ -27,17 +27,18 @@ pub fn run(path : PathBuf) {
     };
 
     let mut  main_class_file : File = open_script(&path);
-    let mut contents;
-    main_class_file.read_to_string(contents);
+    let mut contents : String = "".to_string();
+    main_class_file.read_to_string(&mut contents);
 
     let tokens = FilteredTokenizer::new(SiliconFilter {
         comment_mode: CommentType::Off
-    }, contents);
+    }, contents.as_str());
     let tokens : Vec<Token> = tokens.collect();
 
-    for i in tokens.len()  {
-        let term = (tokens.get(i) as Token).term();
-        print!("{}", term)
+    for i in 0..tokens.len()  {
+        let token : &Token = tokens.get(i).unwrap();
+        let term : String = token.term.to_string();
+        println!("Token: {}", term)
     }
 
     println!("{:?}", path);

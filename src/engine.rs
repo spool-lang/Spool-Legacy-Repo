@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
-use crate::nodes::ScriptType;
 use std::fs::File;
 use std::env;
 use std::process;

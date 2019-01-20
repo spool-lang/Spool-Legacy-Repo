@@ -10,105 +10,128 @@ use crate::engine::Program;
 use std::collections::HashMap;
 use std::string::String;
 
+//Represents something that can be passed around.
+trait Value {
+    fn get_id(&self) -> &str;
+}
+
+//Represents a string value.
+pub struct StringValue {
+    name: String
+}
+
+impl Value for StringValue {
+
+    fn get_id(&self) -> &str {
+        "<native>string"
+    }
+}
+
+//Represents a boolean value.
+
+//Represents a byte value.
+
+//Represents a short value.
+
+//Represents an integer value.
+
+//Represents a long value.
+
+//Represents a float value.
+
+//Represents a double value.
+
+//Represents an empty value.
+struct Empty {
+
+}
+
+impl Value for Empty {
+    fn get_id(&self) -> &str {
+        return "<native>:empty"
+    }
+}
+
 
 //Represents a loaded script file.
-pub struct Script {
-    identifier : String,
-    imports : HashMap<String, Script>,
-    fields : HashMap<String, ScriptValue>,
-    functions : HashMap<String, Function>
-}
-
-impl Script {
-
-    fn new(program : Program, contents : Vec<Vec<String>>) -> Script {
-
-    }
-
-}
-
-//Trait for values
-pub trait Value<T> {
-    fn get_value() -> T;
-}
-
-//Represents a variable or constant.
-pub struct ScriptValue {
-    identifier : String,
-    is_const : bool
-}
-
-//Trait to be used for all functions.
-pub trait Function {
-    fn execute_pre(&self, arguments : Vec<Value<T>>) {
-        let ids = self.get_ids();
-        let mut args : HashMap<String, Value<T>> = HashMap::new();
-
-        for i in ids.len() {
-            args.insert(ids[i], arguments[i])
-        }
 
 
-    }
+//Represents a class instance.
 
-    fn get_ids(&self) -> &Vec<String>;
 
-    fn execute(&self, args : HashMap<String, Value<T>>);
-}
+//Represents a singleton instance.
 
-//Represents a function.
-pub struct ScriptFunction {
-    identifier : String
-}
 
-pub enum ScriptType {
-    Class,
-    Singleton,
-    Enum,
-    Interface,
-    Annotation,
-    Unknown
-}
+//Represents an annotation instance.
 
 /*
-    Code for native functions and variables.
+    Functions
 */
 
-pub struct NativeFunctions {
-    functions : HashMap<String, Function>
-}
+//Trait implemented by script functions and native functions.
+trait Function {
+    fn execute(&self, args : Vec<Box<Value>>) -> &Value {
+        let params : HashMap<String, Parameter> = self.get_params();
+        let mut result : Value;
 
-impl NativeFunctions {
-    fn new() -> NativeFunctions {
-
-        let mut natives = HashMap::new();
-
-        natives.insert("println", PrintFunc {arg_ids : vec!["message".to_string()]});
-
-        NativeFunctions {
-            functions: natives
+        if (args.is_empty()) && (params.is_empty()) {
+            result = self.execute(vec![]);
+            return result
         }
-    }
-}
 
-//Print function
-pub struct PrintFunc {
-    arg_ids : Vec<String>
-}
-
-impl Function for PrintFunc {
-    fn get_ids(&self) -> &Vec<String> {
-        &self.arg_ids
-    }
-
-    fn execute(&self, args : Vec<Value<T>>) {
-        let mut output : String;
-        if args[&0] as String {
-            println!("{}", args[&0])
-        }
-        else {
-            println!("Expected string!");
+        if params.len() < args.len() {
+            println!("Error: Too many arguments!");
             process::exit(2)
         }
+        else if params.len() > args.len() {
+            println!("Error: Too few arguments!");
+            process::exit(2)
+        }
+
+        let mut i : i32 = 0;
+
+        for param in params {
+
+            if (args.get(i) as Value).get_type() != (param.1 as Parameter).param_type {
+                println!("Error: argument type was not the same as parameter type!");
+                process::exit(3)
+            }
+
+        }
+
+        result = self.run_func(args)
+    }
+
+    fn get_params(&self) -> HashMap<String, Parameter>;
+
+    fn run_func(&self, args : Vec<Box<Value>>) -> &Value;
+}
+
+//Represents a parameter.
+struct Parameter{
+    param_type : String
+}
+
+//Representation of a script function.
+struct ScriptFunction {
+    parameters : HashMap<String, Parameter>
+}
+
+//Native Functions.
+
+//Print function.
+struct PrintFunction {
+    params : HashMap<String, Parameter>
+}
+
+impl Function for PrintFunction {
+
+    fn get_params(&self) -> HashMap<String, Parameter> {
+        return *self.params;
+    }
+
+    fn run_func(&self, things: Vec<Box<Value>>) -> &Value {
+        let message : Box<Value> = (*(things.get(0).unwrap() as Box<Value>) as StringValue).name;
+        println!("{}", message)
     }
 }

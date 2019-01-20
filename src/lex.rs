@@ -7,7 +7,7 @@ pub struct SiliconFilter {
 
 impl Filter for SiliconFilter {
 
-    fn on_char(&mut self, c: &char) -> (bool, bool) {
+    fn on_char(&self, c: &char) -> (bool, bool) {
         let mut result : (bool, bool);
 
         if self.comment_mode == CommentType::Off {
@@ -53,14 +53,14 @@ impl Filter for SiliconFilter {
 
             result = drop();
         }
-        else if self.comment_mode = CommentType::MultiLine {
+        else if self.comment_mode == CommentType::MultiLine {
             if *c == '#' {
                 self.comment_mode = CommentType::TryExit
             }
 
             result = drop()
         }
-        else if self.comment_mode = CommentType::TryExit {
+        else if self.comment_mode == CommentType::TryExit {
             if *c == '#' {
                 self.comment_mode = CommentType::Off
             }
@@ -72,6 +72,13 @@ impl Filter for SiliconFilter {
         }
 
         return result
+    }
+}
+
+impl SiliconFilter {
+
+    fn set_comment_type(&mut self, comment_type : CommentType) {
+        self.comment_mode = comment_type
     }
 }
 

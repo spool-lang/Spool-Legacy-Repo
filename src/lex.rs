@@ -1,112 +1,199 @@
-use tokesies::filters::Filter;
-
-//Tokenizer.
-pub struct SiliconFilter {
-    pub comment_mode : CommentType
+//Tokenizer and Lexer
+pub struct Lexer {
+    contents : String,
+    filter : &'static Filter
 }
 
-impl Filter for SiliconFilter {
+impl Lexer {
+    pub fn new(contents : String, filter : &'static Filter) -> Lexer {
+        Lexer { contents, filter }
+    }
 
-    fn on_char(&self, c: &char) -> (bool, bool) {
-        let mut result : (bool, bool);
+    pub fn lex(&mut self) -> Vec<String> {
+        let chars : Vec<char> = self.contents.chars().collect();
+        let mut output : Vec<String> = vec![];
+        let mut token : String = "".to_string();
 
-        match self.comment_mode {
-            CommentType::Off => {
-                result = match *c {
-                    ' ' => drop(),
-                    '\t' => drop(),
-                    '\n' => drop(),
-                    '\r' => drop(),
-                    '\u{C}' => drop(),
+        for ch in chars {
+            let result : TokenResult = self.filter.filter_char(&ch, self);
 
-                    ';' => keep(),
-                    '_' => part(),
-                    '{' => keep(),
-                    '}' => keep(),
-                    '(' => keep(),
-                    '[' => keep(),
-                    ']' => keep(),
-                    '<' => keep(),
-                    '>' => keep(),
-                    '!' => part(),
-                    '"' => keep(),
-
-                    /*
-                '#' => {
-                    self.comment_mode = CommentType::SingleLine;
-                    drop()
+            match result {
+                TokenResult::Drop => {
+                    if !(token.is_empty()) {
+                        output.push(token.clone());
+                        token.clear();
+                    }
                 },
-                */
-
-                    _ => part()
+                TokenResult::New => {
+                    if !(token.is_empty()) {
+                        output.push(token.clone());
+                        token.clear();
+                    }
+                    token.push(ch);
+                }
+                TokenResult::Keep => {
+                    token.push(ch);
                 }
             }
-            _ => result = drop()
-        }
-        /*
-        else if self.comment_mode == CommentType::SingleLine {
-            let newline = match *c {
-                '\n' => true,
-
-                '#' => {
-                    self.comment_mode = CommentType::MultiLine;
-                    false
-                }
-            };
-
-            if newline {
-                self.comment_mode = CommentType::Off
-            }
-
-            result = drop();
-        }
-        else if self.comment_mode == CommentType::MultiLine {
-            if *c == '#' {
-                self.comment_mode = CommentType::TryExit
-            }
-
-            result = drop()
-        }
-        else if self.comment_mode == CommentType::TryExit {
-            if *c == '#' {
-                self.comment_mode = CommentType::Off
-            }
-            else {
-                self.comment_mode = CommentType::MultiLine
-            }
-
-            result = drop()
         }
 
-        */
+        output.push(token);
+        return output;
+    }
+
+    fn set_filter(&mut self, filter : &'static Filter) {
+        self.filter = filter;
+    }
+}
+
+//Trait to be used by different filters.
+pub trait Filter {
+    fn filter_char(&self, c : &char, mut lex : &mut Lexer) -> TokenResult;
+}
+
+//Describes the result of filtering a token.
+enum TokenResult {
+    New,
+    Keep,
+    Drop
+}
+
+//Function aliases for TokenResult.
+fn keep() -> TokenResult {
+    TokenResult::Keep
+}
+
+fn new() -> TokenResult {
+    TokenResult::New
+}
+
+/*
+fn retry() -> TokenResult {
+    TokenResult::Retry
+}
+*/
+
+fn drop() -> TokenResult {
+    TokenResult::Drop
+}
+
+//Filters
+
+pub const BASIC_FILTER: BasicFilter = BasicFilter {};
+const STRING_FILTER : StringFilter = StringFilter {};
+const COMMENT_FILTER : CommentFilter = CommentFilter {};
+const MULTI_LINE : MultilineCommentFilter = MultilineCommentFilter {};
+const ESCAPE_FILTER : EscapeFilter = EscapeFilter {};
+
+pub struct BasicFilter;
+
+impl Filter for BasicFilter {
+    fn filter_char(&self, c : &char, mut lex : &mut Lexer) -> TokenResult {
+
+        let result : TokenResult = match c {
+            ' ' => drop(),
+            '\t' => drop(),
+            '\n' => drop(),
+            '\r' => drop(),
+            '\u{C}' => drop(),
+
+            ';' => new(),
+            '_' => keep(),
+            '{' => new(),
+            '}' => new(),
+            '(' => new(),
+            '[' => new(),
+            ']' => new(),
+            '<' => new(),
+            '>' => new(),
+            '!' => keep(),
+            '"' => {
+                lex.set_filter(&STRING_FILTER);
+                drop()
+            },
+            '#' => {
+                lex.set_filter(&COMMENT_FILTER);
+                drop()
+            }
+            _ => keep()
+        };
+
         return result
     }
 }
 
-impl SiliconFilter {
+pub struct StringFilter;
 
-    fn set_comment_type(&mut self, comment_type : CommentType) {
-        self.comment_mode = comment_type
+impl Filter for StringFilter {
+    fn filter_char(&self, c: &char, mut lex : &mut Lexer) -> TokenResult {
+
+        let result : TokenResult = match c {
+            '"' => {
+                lex.set_filter(&BASIC_FILTER);
+                drop()
+            },
+            _ => keep()
+        };
+
+        return result
     }
 }
 
-//Working with Tuples got too tedious.
-fn keep() -> (bool, bool) {
-    return (true, true)
+pub struct CommentFilter;
+
+impl Filter for CommentFilter {
+
+    fn filter_char(&self, c: &char, mut lex: &mut Lexer) -> TokenResult {
+
+        let result : TokenResult = match c {
+            '\n' => {
+                lex.set_filter(&BASIC_FILTER);
+                drop()
+            },
+            '\r' => {
+                lex.set_filter(&BASIC_FILTER);
+                drop()
+            },
+            '#' => {
+                lex.set_filter(&MULTI_LINE);
+                drop()
+            }
+        };
+
+        return result
+    }
 }
 
-fn drop() -> (bool, bool) {
-    return (true, false)
+pub struct MultilineCommentFilter;
+
+impl Filter for MultilineCommentFilter {
+    fn filter_char(&self, c: &char, mut lex: &mut Lexer) -> TokenResult {
+
+        if let '#' = c {
+            lex.set_filter(&ESCAPE_FILTER)
+        }
+
+        return drop()
+    }
 }
 
-fn part() -> (bool, bool) {
-    return (false, false)
+pub struct EscapeFilter;
+
+impl Filter for EscapeFilter {
+    fn filter_char(&self, c: &char, mut lex: &mut Lexer) -> TokenResult {
+
+        if let '#' = c {
+            lex.set_filter(&BASIC_FILTER)
+        }
+
+        return drop();
+    }
 }
 
-//Comment type
-pub enum CommentType {
-    Off,
-    SingleLine,
-    MultiLine,
-    TryExit,
+//Enum of tokens:
+
+enum Token {
+    SemiColin,
+    Underscore,
+
 }

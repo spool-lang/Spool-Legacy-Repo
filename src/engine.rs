@@ -4,10 +4,9 @@ use std::fs::File;
 use std::env;
 use std::process;
 use std::io::Read;
-use crate::lex::SiliconFilter;
-use crate::lex::CommentType;
 use crate::lex::Lexer;
 use crate::lex::BASIC_FILTER;
+use crate::lex::Token;
 
 pub struct Program {
     root_dir : PathBuf
@@ -30,24 +29,11 @@ pub fn run(path : PathBuf) {
     let mut contents : String = "".to_string();
     main_class_file.read_to_string(&mut contents);
 
-    /*
-    let tokens = FilteredTokenizer::new(SiliconFilter {
-        comment_mode: CommentType::Off
-    }, contents.as_str());
-    let tokens : Vec<Token> = tokens.collect();
-
-    for i in 0..tokens.len()  {
-        let token : &Token = tokens.get(i).unwrap();
-        let term : String = token.term.to_string();
-        println!("Token: {}", term)
-    }
-    */
-
     let mut lexer: Lexer = Lexer::new(contents, &BASIC_FILTER);
-    let tokens = lexer.lex();
+    let tokens : Vec<Token> = lexer.lex();
 
     for token in tokens  {
-        println!("Token: {}", token)
+        println!("Token: {}", token.to_string())
     }
 
     println!("{:?}", path);

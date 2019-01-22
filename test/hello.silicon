@@ -1,7 +1,8 @@
 class Hello {
 
     main {
-        !println("Hello, Silicon!");
+        #This is a comment.
+        println("Hello, Silicon!");
     }
 
 }

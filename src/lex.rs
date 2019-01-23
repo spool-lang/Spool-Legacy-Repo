@@ -1,13 +1,40 @@
 use std::process;
+use crate::lex::FilterResult::New;
+use crate::lex::FilterResult::Multiple;
+use crate::lex::FilterResult::Keep;
+use crate::lex::FilterResult::Drop;
+use crate::lex::Token::Str;
+use crate::lex::Token::AngleIn;
+use crate::lex::Token::AngleOut;
+use crate::lex::Token::SquareOut;
+use crate::lex::Token::SquareIn;
+use crate::lex::Token::ParenOut;
+use crate::lex::Token::ParenIn;
+use crate::lex::Token::CurlyOut;
+use crate::lex::Token::CurlyIn;
+use crate::lex::Token::SemiColin;
+use crate::lex::Token::Func;
+use crate::lex::Filter::StrFilter;
+use crate::lex::Filter::Comment;
+use crate::lex::Filter::WordFilter;
+use crate::lex::Filter::Basic;
+use crate::lex::Filter::Multiline;
+use crate::lex::Token::Word;
+use core::borrow::Borrow;
+use crate::lex::Filter::FuncFilter;
+use crate::lex::Token::FuncName;
+use crate::lex::Filter::ParamFilter;
+use crate::lex::Token::Colin;
+use crate::lex::Token::Comma;
 
 //Tokenizer and Lexer
 pub struct Lexer {
     contents : String,
-    filter : &'static Filter
+    filter : Filter
 }
 
 impl Lexer {
-    pub fn new(contents : String, filter : &'static Filter) -> Lexer {
+    pub fn new(contents : String, filter : Filter) -> Lexer {
         Lexer { contents, filter }
     }
 
@@ -20,213 +47,169 @@ impl Lexer {
             let mut next = false;
 
             while !next {
-                let result : TokenResult = self.filter.filter_char(self, &token, &ch);
+                let result : (FilterResult, Option<Filter>, bool) = self.filter.filter(ch, token.clone());
 
-                match result {
-                    TokenResult::New(t) => {
+                match result.0 {
+                    New(t) => {
+                        println!("{}", &t.to_string());
                         output.push(t);
-                        token.clear();
-                        next = true;
+                        token.clear()
                     },
-                    TokenResult::Keep => {
-                        token.push(ch);
-                        next = true
-                    },
-                    TokenResult::Split(t) => {
-                        output.push(t);
-                        next = false
-                    },
-                    TokenResult::Retry => {
-                        next = false
+                    Multiple(tokens) => {
+                        for token in tokens {
+                            println!("{}", &token.to_string());
+                            output.push(token)
+                        }
+                        token.clear()
                     }
-                    TokenResult::Drop => {
-                        next = true
+                    Keep => {
+                        token.push(ch)
+                    },
+                    Drop => {
+                        token.clear()
                     }
                 }
+
+                match result.1 {
+                    Some(f) => self.filter = f,
+                    None => {}
+                }
+
+                next = result.2
             }
         }
 
         return output;
     }
-
-    fn set_filter(&mut self, filter : &'static Filter) {
-        self.filter = filter;
-    }
-}
-
-//Trait to be used by different filters.
-pub trait Filter {
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult;
 }
 
 //Describes the result of filtering a token.
-enum TokenResult {
+pub enum FilterResult {
     New(Token),
-    Split(Token),
-    Retry,
+    Multiple(Vec<Token>),
     Keep,
     Drop
 }
 
-//Function aliases for TokenResult.
-fn keep() -> TokenResult {
-    TokenResult::Keep
+//filters
+pub enum Filter {
+    Basic,
+    FuncFilter,
+    ParamFilter,
+    WordFilter,
+    StrFilter,
+    Comment,
+    Multiline
 }
 
-fn new(token : Token) -> TokenResult {
-    TokenResult::New(token)
-}
+impl Filter {
 
-fn split(token : Token) -> TokenResult {
-    TokenResult::Split(token)
-}
+    pub fn filter(&self, c : char, tok : String) -> (FilterResult, Option<Filter>, bool) {
 
-fn retry() -> TokenResult {
-    TokenResult::Retry
-}
+        let result : (FilterResult, Option<Filter>, bool) = match self {
+            Basic => match c {
+                ' ' => (Drop, None, true),
+                '\t' => (Drop, None, true),
+                '\n' => (Drop, None, true),
+                '\r' => (Drop, None, true),
+                '\u{C}' => (Drop, None, true),
 
-fn drop() -> TokenResult {
-    TokenResult::Drop
-}
-
-//Filters
-
-pub const BASIC_FILTER: BasicFilter = BasicFilter {};
-const ID_FILTER : IdFilter = IdFilter {};
-const STRING_FILTER : StringFilter = StringFilter {};
-const COMMENT_FILTER : CommentFilter = CommentFilter {};
-const MULTI_LINE : MultilineCommentFilter = MultilineCommentFilter {};
-const ESCAPE_FILTER : EscapeFilter = EscapeFilter {};
-
-pub struct BasicFilter;
-
-impl Filter for BasicFilter {
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult {
-
-        let result : TokenResult = match c {
-            ' ' => drop(),
-            '\t' => drop(),
-            '\n' => drop(),
-            '\r' => drop(),
-            '\u{C}' => drop(),
-
-            ';' => new(Token::SemiColin),
-            '_' => keep(),
-            '{' => new(Token::CurlyIn),
-            '}' => new(Token::CurlyOut),
-            '(' => new(Token::ParenIn),
-            ')' => new(Token::ParenOut),
-            '[' => new(Token::SquareIn),
-            ']' => new(Token::SquareOut),
-            '<' => new(Token::AngleIn),
-            '>' => new(Token::AngleOut),
-            '!' => keep(),
-            '"' => {
-                lex.set_filter(&STRING_FILTER);
-                drop()
+                ';' => (New(SemiColin), None, true),
+                '{' => (New(CurlyIn), None, true),
+                '}' => (New(CurlyOut), None, true),
+                '(' => (New(ParenIn), None, true),
+                ')' => (New(ParenOut), None, true),
+                '[' => (New(SquareIn), None, true),
+                ']' => (New(SquareOut), None, true),
+                '<' => (New(AngleIn), None, true),
+                '>' => (New(AngleOut), None, true),
+                '"' => (Drop, Some(StrFilter), true),
+                '#' => (Keep, Some(Comment), true),
+                _ => {
+                    if c.is_ascii_alphabetic() {
+                        (Keep, Some(WordFilter), true)
+                    }
+                    else {
+                        println!("Error: {} is not a valid character!", c);
+                        process::exit(5)
+                    }
+                }
             },
-            '#' => {
-                lex.set_filter(&COMMENT_FILTER);
-                drop()
+            FuncFilter => match c{
+                '(' => (Multiple(vec![FuncName(tok), ParenIn]), Some(ParamFilter), true),
+                _ => {
+                    if c.is_ascii_alphabetic() {
+                        (Keep, None, true)
+                    }
+                    else {
+                        println!("Illegal character {} in function name!", c);
+                        process::exit(5)
+                    }
+                }
             },
-            _ => {
-                if c.is_alphabetic() {
-                    lex.set_filter(&ID_FILTER);
-                    keep()
+            ParamFilter => match c {
+                ':' => {
+                    if tok.is_empty() {
+                        (New(Colin), None, true)
+                    }
+                    else {
+                        (New(Word(tok)), None, false)
+                    }
+                },
+                ',' => {
+                    if tok.is_empty() {
+                        (New(Comma), None, true)
+                    }
+                    else {
+                        (New(Word(tok)), None, false)
+                    }
+                },
+                ')' => (New(ParenOut), Some(Basic), false),
+                _ => (Keep, None, false)
+            }
+            WordFilter => {
+                let mut word_result : (FilterResult, Option<Filter>, bool);
+
+                if !c.is_ascii_alphabetic() {
+                    word_result = match tok.as_ref() {
+                        "func" => (New(Func), Some(FuncFilter), true),
+                        _ => (New(Word(tok)), Some(Basic), false)
+                    }
                 }
                 else {
-                    println!("Error: {} is not a valid character!", c);
-                    process::exit(5)
+                    word_result = (Keep, None, true)
+                }
+
+                word_result
+
+            }
+            StrFilter => match c {
+                '"' => (New(Str(tok.clone())), Some(Basic), true),
+                _ => (Keep, None, true)
+            },
+            Comment => match c {
+                '\n' => (Drop, Some(Basic), true),
+                '\r' => (Drop, Some(Basic), true),
+                _ => {
+                    if tok == "##" {
+                        (Drop, Some(Multiline), true)
+                    }
+                    else {
+                        (Drop, None, true)
+                    }
+                }
+            },
+            Multiline => {
+                if (tok.get((tok.len() - 1)..(tok.len())) == Some("#")) && (c == '#') {
+                    (Drop, Some(Basic), true)
+                }
+                else {
+                    (Drop, None, true)
                 }
             }
         };
 
         return result
-    }
-}
-
-pub struct IdFilter;
-
-impl Filter for IdFilter {
-
-    fn filter_char(&self, mut lex: &mut Lexer, token: &String, c: &char) -> TokenResult {
-
-        if c.is_alphabetic() {
-            return keep();
-        }
-        else {
-            return split(Token::String(token.to_string()));
-            lex.set_filter(&BASIC_FILTER);
-        }
-    }
-}
-
-pub struct StringFilter;
-
-impl Filter for StringFilter {
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult {
-
-        let result : TokenResult = match c {
-            '"' => {
-                lex.set_filter(&BASIC_FILTER);
-                new(Token::String(token.to_string()))
-            },
-            _ => keep()
-        };
-
-        return result
-    }
-}
-
-pub struct CommentFilter;
-
-impl Filter for CommentFilter {
-
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult {
-
-        let result : TokenResult = match c {
-            '\n' => {
-                lex.set_filter(&BASIC_FILTER);
-                drop()
-            },
-            '\r' => {
-                lex.set_filter(&BASIC_FILTER);
-                drop()
-            },
-            '#' => {
-                lex.set_filter(&MULTI_LINE);
-                drop()
-            }
-            _ => drop()
-        };
-
-        return result
-    }
-}
-
-pub struct MultilineCommentFilter;
-
-impl Filter for MultilineCommentFilter {
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult {
-
-        if let '#' = c {
-            lex.set_filter(&ESCAPE_FILTER)
-        }
-
-        return drop()
-    }
-}
-
-pub struct EscapeFilter;
-
-impl Filter for EscapeFilter {
-    fn filter_char(&self, mut lex : &mut Lexer, token : &String, c : &char) -> TokenResult {
-
-        if let '#' = c {
-            lex.set_filter(&BASIC_FILTER)
-        }
-
-        return drop();
     }
 }
 
@@ -234,6 +217,8 @@ impl Filter for EscapeFilter {
 
 pub enum Token {
     SemiColin,
+    Colin,
+    Comma,
     CurlyIn,
     CurlyOut,
     ParenIn,
@@ -242,26 +227,49 @@ pub enum Token {
     SquareOut,
     AngleIn,
     AngleOut,
-    Identifier(String),
-    String(String)
+    Word(String),
+    FuncName(String),
+    Str(String),
+    Native,
+    Func,
 }
+
+const SYMBOL_STRING : &str = "Symbol:";
+
 
 impl Token {
 
-    pub fn to_string(&self) -> &str {
+    pub fn to_string(&self) -> String {
 
-        let string = match self {
-            Token::SemiColin => ";",
-            Token::CurlyIn => "{",
-            Token::CurlyOut => "}",
-            Token::ParenIn => "(",
-            Token::ParenOut => ")",
-            Token::SquareIn => "[",
-            Token::SquareOut => "]",
-            Token::AngleIn => "<",
-            Token::AngleOut => ">",
-            Token::Identifier(id) => id,
-            Token::String(s) => s
+        let string : String = match self {
+            Token::SemiColin => "Symbol ;".to_string(),
+            Token::Colin => "Symbol :".to_string(),
+            Token::Comma => "Symbol ,".to_string(),
+            Token::CurlyIn => "Symbol {".to_string(),
+            Token::CurlyOut => "Symbol }".to_string(),
+            Token::ParenIn => "Symbol (".to_string(),
+            Token::ParenOut => "Symbol )".to_string(),
+            Token::SquareIn => "Symbol [".to_string(),
+            Token::SquareOut => "Symbol ]".to_string(),
+            Token::AngleIn => "Symbol <".to_string(),
+            Token::AngleOut => "Symbol >".to_string(),
+            Token::FuncName(name) => {
+                let mut a_string = "Function: ".to_string();
+                a_string.push_str(name);
+                a_string
+            }
+            Token::Word(word) => {
+                let mut a_string = "Word ".to_string();
+                a_string.push_str(word);
+                a_string
+            },
+            Token::Str(s) => {
+                let mut a_string = "String literal ".to_string();
+                a_string.push_str(s);
+                a_string
+            },
+            Token::Native => "Keyword native".to_string(),
+            Token::Func => "Keyword func".to_string()
         };
 
         return string

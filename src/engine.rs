@@ -5,8 +5,10 @@ use std::env;
 use std::process;
 use std::io::Read;
 use crate::lex::Lexer;
-use crate::lex::BASIC_FILTER;
 use crate::lex::Token;
+use crate::lex::Filter;
+
+//Responsible for managing the program itself.
 
 pub struct Program {
     root_dir : PathBuf
@@ -29,12 +31,8 @@ pub fn run(path : PathBuf) {
     let mut contents : String = "".to_string();
     main_class_file.read_to_string(&mut contents);
 
-    let mut lexer: Lexer = Lexer::new(contents, &BASIC_FILTER);
+    let mut lexer: Lexer = Lexer::new(contents, Filter::Basic);
     let tokens : Vec<Token> = lexer.lex();
-
-    for token in tokens  {
-        println!("Token: {}", token.to_string())
-    }
 
     println!("{:?}", path);
     println!("{:?}", root.root_dir);
@@ -42,7 +40,7 @@ pub fn run(path : PathBuf) {
     return;
 }
 
-fn root_directory(mut path : &PathBuf) -> PathBuf {
+fn root_directory(path : &PathBuf) -> PathBuf {
 
     let path = path.as_path();
     let path = path.parent().unwrap();
@@ -52,7 +50,7 @@ fn root_directory(mut path : &PathBuf) -> PathBuf {
 }
 
 fn class_path(path : &PathBuf, import : String) -> PathBuf {
-    let mut split = import.split(".");
+    let split = import.split(".");
     let components : Vec<&str> = split.collect();
 
     let mut class_path = path.clone();
@@ -70,7 +68,7 @@ fn open_script(path : &PathBuf) -> File {
     let mut path = path.clone();
     path.set_extension("silicon");
 
-    let mut file : File;
+    let file : File;
     match File::open(&path) {
         Ok(T) => file = T,
         Err(E) => {

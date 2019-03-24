@@ -7,6 +7,9 @@ use std::io::Read;
 use crate::lex::Lexer;
 use crate::lex::Token;
 use crate::lex::Filter;
+use crate::ast;
+use crate::parse;
+use crate::parse::Node;
 
 //Responsible for managing the program itself.
 
@@ -27,15 +30,12 @@ pub fn run(path : PathBuf) {
         root_dir : root_directory(&path)
     };
 
-    let mut  main_class_file : File = open_script(&path);
+    let mut main_class_file : File = open_script(&path);
     let mut contents : String = "".to_string();
     main_class_file.read_to_string(&mut contents);
 
-    let mut lexer: Lexer = Lexer::new(contents, Filter::Basic);
-    let tokens : Vec<Token> = lexer.lex();
-
-    println!("{:?}", path);
-    println!("{:?}", root.root_dir);
+    let mut program : parse::FileNode = parse::parse_file(contents);
+    program.run();
 
     return;
 }

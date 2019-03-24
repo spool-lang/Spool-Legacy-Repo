@@ -43,7 +43,7 @@ trait Func {
         }
 
         if params.len() > args.len(){
-            println!("Error: Too few arguments!");
+            println!("Error: Not enough arguments; please specify the file path.");
             process::exit(2)
         }
         else if params.len() < args.len(){

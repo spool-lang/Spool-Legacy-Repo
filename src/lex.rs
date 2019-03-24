@@ -12,7 +12,7 @@ use crate::lex::Token::ParenOut;
 use crate::lex::Token::ParenIn;
 use crate::lex::Token::CurlyOut;
 use crate::lex::Token::CurlyIn;
-use crate::lex::Token::SemiColin;
+use crate::lex::Token::SemiColon;
 use crate::lex::Token::Func;
 use crate::lex::Filter::StrFilter;
 use crate::lex::Filter::Comment;
@@ -24,8 +24,9 @@ use core::borrow::Borrow;
 use crate::lex::Filter::FuncFilter;
 use crate::lex::Token::FuncName;
 use crate::lex::Filter::ParamFilter;
-use crate::lex::Token::Colin;
+use crate::lex::Token::Colon;
 use crate::lex::Token::Comma;
+use crate::lex::Token::Class;
 
 //Tokenizer and Lexer
 pub struct Lexer {
@@ -114,7 +115,7 @@ impl Filter {
                 '\r' => (Drop, None, true),
                 '\u{C}' => (Drop, None, true),
 
-                ';' => (New(SemiColin), None, true),
+                ';' => (New(SemiColon), None, true),
                 '{' => (New(CurlyIn), None, true),
                 '}' => (New(CurlyOut), None, true),
                 '(' => (New(ParenIn), None, true),
@@ -148,24 +149,10 @@ impl Filter {
                 }
             },
             ParamFilter => match c {
-                ':' => {
-                    if tok.is_empty() {
-                        (New(Colin), None, true)
-                    }
-                    else {
-                        (New(Word(tok)), None, false)
-                    }
-                },
-                ',' => {
-                    if tok.is_empty() {
-                        (New(Comma), None, true)
-                    }
-                    else {
-                        (New(Word(tok)), None, false)
-                    }
-                },
-                ')' => (New(ParenOut), Some(Basic), false),
-                _ => (Keep, None, false)
+                ':' => (Multiple(vec![Word(tok), Colon]), None, true),
+                ',' => (Multiple(vec![Word(tok), Colon]), None, true),
+                ')' => (New(ParenOut), Some(Basic), true),
+                _ => (Keep, None, true)
             }
             WordFilter => {
                 let mut word_result : (FilterResult, Option<Filter>, bool);
@@ -173,6 +160,7 @@ impl Filter {
                 if !c.is_ascii_alphabetic() {
                     word_result = match tok.as_ref() {
                         "func" => (New(Func), Some(FuncFilter), true),
+                        "class" => (New(Class), Some(Basic), true),
                         _ => (New(Word(tok)), Some(Basic), false)
                     }
                 }
@@ -214,10 +202,10 @@ impl Filter {
 }
 
 //Enum of tokens:
-
+#[derive(Clone)]
 pub enum Token {
-    SemiColin,
-    Colin,
+    SemiColon,
+    Colon,
     Comma,
     CurlyIn,
     CurlyOut,
@@ -229,6 +217,7 @@ pub enum Token {
     AngleOut,
     Word(String),
     FuncName(String),
+    Class,
     Str(String),
     Native,
     Func,
@@ -242,34 +231,35 @@ impl Token {
     pub fn to_string(&self) -> String {
 
         let string : String = match self {
-            Token::SemiColin => "Symbol ;".to_string(),
-            Token::Colin => "Symbol :".to_string(),
-            Token::Comma => "Symbol ,".to_string(),
-            Token::CurlyIn => "Symbol {".to_string(),
-            Token::CurlyOut => "Symbol }".to_string(),
-            Token::ParenIn => "Symbol (".to_string(),
-            Token::ParenOut => "Symbol )".to_string(),
-            Token::SquareIn => "Symbol [".to_string(),
-            Token::SquareOut => "Symbol ]".to_string(),
-            Token::AngleIn => "Symbol <".to_string(),
-            Token::AngleOut => "Symbol >".to_string(),
-            Token::FuncName(name) => {
-                let mut a_string = "Function: ".to_string();
+            SemiColon => ";".to_string(),
+            Colon => ":".to_string(),
+            Comma => ",".to_string(),
+            CurlyIn => "{".to_string(),
+            CurlyOut => "}".to_string(),
+            ParenIn => "(".to_string(),
+            ParenOut => ")".to_string(),
+            SquareIn => "[".to_string(),
+            SquareOut => "]".to_string(),
+            AngleIn => "<".to_string(),
+            AngleOut => ">".to_string(),
+            FuncName(name) => {
+                let mut a_string = "".to_string();
                 a_string.push_str(name);
                 a_string
             }
             Token::Word(word) => {
-                let mut a_string = "Word ".to_string();
+                let mut a_string = "".to_string();
                 a_string.push_str(word);
                 a_string
             },
             Token::Str(s) => {
-                let mut a_string = "String literal ".to_string();
+                let mut a_string = "".to_string();
                 a_string.push_str(s);
                 a_string
             },
-            Token::Native => "Keyword native".to_string(),
-            Token::Func => "Keyword func".to_string()
+            Token::Native => "native".to_string(),
+            Token::Class => "class".to_string(),
+            Token::Func => "func".to_string()
         };
 
         return string

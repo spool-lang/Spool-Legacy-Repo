@@ -4,10 +4,6 @@ use std::fs::File;
 use std::env;
 use std::process;
 use std::io::Read;
-use crate::lex::Lexer;
-use crate::lex::Token;
-use crate::lex::Filter;
-use crate::ast;
 use crate::parse;
 use crate::parse::Node;
 

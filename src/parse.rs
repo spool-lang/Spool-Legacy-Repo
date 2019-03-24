@@ -66,14 +66,14 @@ fn part() -> (bool, bool) {
 }
 
 
-struct TokenStream {
+pub struct TokenStream {
     tokens : Vec<String>,
     count : u64
 }
 
 impl TokenStream {
 
-    fn next(&mut self) -> Option<String> {
+    pub fn next(&mut self) -> Option<String> {
 
         if (self.count as usize) >= self.tokens.len() {
             return None
@@ -85,7 +85,7 @@ impl TokenStream {
         }
     }
 
-    fn back(&mut self) {
+    pub fn back(&mut self) {
         self.count -= 1;
     }
 }
@@ -94,13 +94,9 @@ impl TokenStream {
 //A trait shared by all nodes in the syntax tree.
 pub trait Node {
 
-    fn parse(&mut self, stream : &mut TokenStream) {
+    fn parse(&mut self, stream : &mut TokenStream);
 
-    }
-
-    fn run(&mut self) {
-
-    }
+    fn run(&mut self);
 }
 
 //Represents a silicon file.
@@ -189,7 +185,7 @@ impl Node for FunctionNode {
 
     fn run(&mut self) {
 
-        for mut child in &mut self.children  {
+        for mut child in &mut self.children {
             child.run()
         }
 

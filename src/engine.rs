@@ -6,6 +6,7 @@ use std::process;
 use std::io::Read;
 use crate::parse;
 use crate::parse::Node;
+use std::collections::HashMap;
 
 //Responsible for managing the program itself.
 
@@ -31,7 +32,7 @@ pub fn run(path : PathBuf) {
     main_class_file.read_to_string(&mut contents);
 
     let mut program : parse::FileNode = parse::parse_file(contents);
-    program.run();
+    program.run(HashMap::new());
 
     return;
 }
@@ -73,4 +74,10 @@ fn open_script(path : &PathBuf) -> File {
         }
     }
     return file
+}
+
+//Data wrappers
+
+pub enum Data {
+    String(String)
 }

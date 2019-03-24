@@ -1,4 +1,7 @@
 use tokesies::*;
+use std::str::Chars;
+use std::collections::HashMap;
+use crate::engine;
 
 pub fn parse_file(contents : String) -> FileNode {
 
@@ -96,7 +99,7 @@ pub trait Node {
 
     fn parse(&mut self, stream : &mut TokenStream);
 
-    fn run(&mut self);
+    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data>;
 }
 
 //Represents a silicon file.
@@ -113,6 +116,7 @@ impl FileNode {
 }
 
 impl Node for FileNode {
+
 
     fn parse(&mut self, stream : &mut TokenStream) {
 
@@ -131,8 +135,8 @@ impl Node for FileNode {
         }
     }
 
-    fn run(&mut self) {
-        self.main_functions[0].run()
+    fn run(&mut self, data : HashMap<String, engine::Data>)  -> HashMap<String, engine::Data> {
+        self.main_functions[0].run(data)
     }
 }
 
@@ -183,15 +187,148 @@ impl Node for FunctionNode {
         }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
 
         for mut child in &mut self.children {
-            child.run()
+            data = child.run(data)
         }
-
+        return data
     }
 }
 
+//Node representing a variable
+pub struct VariableNode {
+    constant : bool,
+    id : String,
+    var_type : String,
+    val : Vec<Box<Node>>
+}
+
+impl VariableNode {
+
+    fn new_var() -> VariableNode {
+        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : vec![]}
+    }
+
+    fn new_const() -> VariableNode {
+        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : vec![]}
+    }
+}
+
+impl Node for VariableNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+
+        loop {
+            match stream.next() {
+                Some(token) => {
+
+                    for ch in token.chars() {
+                        if ch.is_alphabetic() {
+                            self.id = token.clone();
+                            break
+                        }
+                    }
+
+                    if self.id != "" {
+                        break
+                    }
+
+                    if !(token.clone().trim().is_empty()) {
+                        panic!("Unexpected Token [{:?}]!", token)
+                    }
+                }
+                None => panic!("Unexpected EOF!")
+            }
+        }
+        loop {
+            match stream.next() {
+                Some(token) => match token.as_str() {
+                    ":" => break,
+                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
+                }
+                None => panic!("Unexpected EOF!")
+            }
+        }
+        loop {
+            match stream.next() {
+                Some(token) => {
+                    for ch in token.chars() {
+                        if ch.is_alphabetic() {
+                            self.var_type = token.clone();
+                            break
+                        }
+                    }
+
+                    if self.var_type != "" {
+                        break
+                    }
+
+                    if !(token.clone().trim().is_empty()) {
+                        panic!("Unexpected Token [{:?}]!", token)
+                    }
+                }
+                None => panic!("Unexpected EOF!")
+            }
+        }
+        loop {
+            match stream.next() {
+                Some(token) => match token.as_str() {
+                    "=" => break,
+                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
+                }
+                None => panic!("Unexpected EOF!")
+            }
+        }
+
+        loop {
+            match stream.next() {
+                Some(token) => match token.as_str() {
+                    "\"" => {},
+                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
+                }
+                None => panic!("Unexpected EOF!")
+            }
+        }
+    }
+
+    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+        unimplemented!()
+    }
+}
+
+//A node representing a string.
+
+struct StringNode {
+    thing : String
+}
+
+impl StringNode {
+
+    fn new() -> StringNode {
+        StringNode {thing : "".to_string()}
+    }
+
+}
+
+impl Node for StringNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+        loop {
+            match stream.next() {
+                Some(next_tok) => match next_tok.as_str() {
+                    "\"" => break,
+                    _ => self.thing.push_str(next_tok.as_str())
+                },
+                None => panic!("Unexpected EOF!")
+            }
+        }
+    }
+
+    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+        unimplemented!()
+    }
+}
 
 //Temporarily represents the print keyword, which will be replaced with an actual print function later on.
 
@@ -233,7 +370,8 @@ impl Node for PrintNode {
         }
     }
 
-    fn run(&mut self) {
-        println!("{}", self.out)
+    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+        println!("{}", self.out);
+        return data
     }
 }

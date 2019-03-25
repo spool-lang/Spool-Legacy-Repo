@@ -2,6 +2,7 @@ use tokesies::*;
 use std::str::Chars;
 use std::collections::HashMap;
 use crate::engine;
+use std::process::id;
 
 pub fn parse_file(contents : String) -> FileNode {
 
@@ -84,6 +85,7 @@ impl TokenStream {
         else {
             let next_token : String = self.tokens[self.count as usize].clone();
             self.count += 1;
+            println!("{}", next_token.clone());
             return Some(next_token)
         }
     }
@@ -180,6 +182,11 @@ impl Node for FunctionNode {
                         print_node.parse(stream);
                         self.children.push(Box::new(print_node))
                     },
+                    "var" => {
+                        let mut var_node : VariableNode = VariableNode::new_var();
+                        var_node.parse(stream);
+                        self.children.push(Box::new(var_node))
+                    }
                     _ => { if !(next_tok.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", next_tok) } }
                 }
                 None => panic!("Unexpected EOF!")
@@ -201,17 +208,17 @@ pub struct VariableNode {
     constant : bool,
     id : String,
     var_type : String,
-    val : Vec<Box<Node>>
+    val : Option<Box<Node>>
 }
 
 impl VariableNode {
 
     fn new_var() -> VariableNode {
-        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : vec![]}
+        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : None}
     }
 
     fn new_const() -> VariableNode {
-        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : vec![]}
+        VariableNode {constant : false, id : "".to_string(), var_type : "".to_string(), val : None}
     }
 }
 
@@ -284,17 +291,54 @@ impl Node for VariableNode {
         loop {
             match stream.next() {
                 Some(token) => match token.as_str() {
-                    "\"" => {},
-                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
+                    "\"" => {
+                        let mut string_node : StringNode = StringNode::new();
+                        string_node.parse(stream);
+                        self.val = Some(Box::new(string_node));
+                        break
+                    },
+                    _ => {
+                        for c in token.chars() {
+                            if c.is_alphabetic() {
+                                let id = IdNode::new(token.clone());
+                                self.val = Some(Box::new(id));
+                                return;
+                            }
+                            else if !(token.clone().trim().is_empty()){
+                                panic!("Unexpected token [{:?}]!", token)
+                            }
+                        }
+                    }
                 }
                 None => panic!("Unexpected EOF!")
             }
         }
     }
 
-    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
-        unimplemented!()
+    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+
+        let this_val = match &mut self.val {
+            Some(node) => {
+                data = node.run(data);
+                match data.get("<value>") {
+                    Some(value) => match value {
+                        engine::Data::String(thing) => engine::Data::String(thing.clone())
+                    }
+                    None => panic!("Missing value!")
+                }
+            },
+            None => panic!("Missing value!")
+        };
+
+        data.remove("<value>");
+
+        data.insert(
+            self.id.clone(),
+            this_val
+        );
+        return data
     }
+
 }
 
 //A node representing a string.
@@ -325,21 +369,60 @@ impl Node for StringNode {
         }
     }
 
-    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
-        unimplemented!()
+    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+        data.insert("<value>".to_string(), engine::Data::String(self.thing.clone()));
+        return data
     }
+
+}
+
+//Represents an identifier.
+
+pub struct IdNode {
+    id : String
+}
+
+impl IdNode {
+
+    fn new(the_id : String) -> IdNode {
+        IdNode {id : the_id.to_string()}
+    }
+
+}
+
+impl Node for IdNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+        return;
+    }
+
+    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+
+        let value = match data.get(self.id.as_str()) {
+            Some(value) => match value {
+                engine::Data::String(thing) => engine::Data::String(thing.clone())
+            },
+            None => panic!("{} is not defined in the current scope!")
+        };
+
+        data.insert("<value>".to_string(), value);
+
+        return data
+    }
+
+
 }
 
 //Temporarily represents the print keyword, which will be replaced with an actual print function later on.
 
 pub struct PrintNode {
-    out : String
+    out : Option<Box<Node>>
 }
 
 impl PrintNode {
 
     fn new() -> PrintNode {
-        PrintNode{out: "".to_string()}
+        PrintNode{out: None}
     }
 
 }
@@ -351,27 +434,48 @@ impl Node for PrintNode {
         loop {
             match stream.next() {
                 Some(next_tok) => match next_tok.as_str() {
-                    "\"" => break,
+                    "\"" => {
+                        let mut string_node : StringNode = StringNode::new();
+                        string_node.parse(stream);
+                        self.out = Some(Box::new(string_node))
+                    },
                     " " => {}
-                    _ => panic!("Unexpected token [{:?}]!", next_tok)
-                },
-                None => panic!("Unexpected EOF!")
-            }
-        }
-
-        loop {
-            match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "\"" => break,
-                    _ => self.out.push_str(next_tok.as_str())
+                    "\n" => return,
+                    _ => {
+                        for c in next_tok.chars() {
+                            if c.is_alphabetic() {
+                                let id = IdNode::new(next_tok.clone());
+                                self.out = Some(Box::new(id));
+                                break
+                            }
+                            else {
+                                panic!("Unexpected token [{:?}]!", next_tok)
+                            }
+                        }
+                    }
                 },
                 None => panic!("Unexpected EOF!")
             }
         }
     }
 
-    fn run(&mut self, data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
-        println!("{}", self.out);
+    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+        match &mut self.out {
+            Some(node) => {
+                data = node.run(data);
+
+                match data.get("<value>") {
+                    Some(value) => match value {
+                        engine::Data::String(thing) => println!("{}", thing)
+                    }
+                    None => panic!("Something went wrong!")
+                }
+            },
+            None => panic!("Something broke!")
+        }
+
+        data.remove("<value>");
+
         return data
     }
 }

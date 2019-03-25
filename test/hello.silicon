@@ -1,5 +1,9 @@
 main {
     var hello : String = "Hello, world!"
 
-    print "I am the Silicon Programming Language."
+    print hello
+
+    var world : String = hello
+
+    print world
 }

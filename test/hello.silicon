@@ -3,7 +3,11 @@ main {
 
     print hello
 
-    var world : String = hello
+    var my_name : String = "I am the silicon programing language!"
 
-    print world
+    print my_name
+
+    var number : Int = 1
+
+    print number
 }

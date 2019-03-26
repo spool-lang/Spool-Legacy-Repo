@@ -50,7 +50,10 @@ impl filters::Filter for MyFilter {
             ':' => keep(),
             _ => match c.is_ascii_alphanumeric() {
                 true => part(),
-                false => keep()
+                false => match c.is_ascii_digit() {
+                    true => part(),
+                    false => keep()
+                }
             }
         }
     }
@@ -101,7 +104,7 @@ pub trait Node {
 
     fn parse(&mut self, stream : &mut TokenStream);
 
-    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data>;
+    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type>;
 }
 
 //Represents a silicon file.
@@ -137,7 +140,7 @@ impl Node for FileNode {
         }
     }
 
-    fn run(&mut self, data : HashMap<String, engine::Data>)  -> HashMap<String, engine::Data> {
+    fn run(&mut self, data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
         self.main_functions[0].run(data)
     }
 }
@@ -194,7 +197,7 @@ impl Node for FunctionNode {
         }
     }
 
-    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+    fn run(&mut self, mut data: HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
 
         for mut child in &mut self.children {
             data = child.run(data)
@@ -299,12 +302,15 @@ impl Node for VariableNode {
                     },
                     _ => {
                         for c in token.chars() {
-                            if c.is_alphabetic() {
+                            if c.is_ascii_alphabetic() {
                                 let id = IdNode::new(token.clone());
                                 self.val = Some(Box::new(id));
                                 return;
-                            }
-                            else if !(token.clone().trim().is_empty()){
+                            } else if c.is_ascii_digit() {
+                                let num = NumericNode::new(token.parse().unwrap());
+                                self.val = Some(Box::new(num));
+                                return;
+                            } else if !(token.clone().trim().is_empty()){
                                 panic!("Unexpected token [{:?}]!", token)
                             }
                         }
@@ -315,14 +321,15 @@ impl Node for VariableNode {
         }
     }
 
-    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+    fn run(&mut self, mut data: HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
 
         let this_val = match &mut self.val {
             Some(node) => {
                 data = node.run(data);
                 match data.get("<value>") {
                     Some(value) => match value {
-                        engine::Data::String(thing) => engine::Data::String(thing.clone())
+                        engine::Type::String(thing) => engine::Type::String(thing.clone()),
+                        engine::Type::Num(num) => engine::Type::Num(num.clone())
                     }
                     None => panic!("Missing value!")
                 }
@@ -369,8 +376,8 @@ impl Node for StringNode {
         }
     }
 
-    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
-        data.insert("<value>".to_string(), engine::Data::String(self.thing.clone()));
+    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
+        data.insert("<value>".to_string(), engine::Type::String(self.thing.clone()));
         return data
     }
 
@@ -396,13 +403,14 @@ impl Node for IdNode {
         return;
     }
 
-    fn run(&mut self, mut data : HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
 
         let value = match data.get(self.id.as_str()) {
             Some(value) => match value {
-                engine::Data::String(thing) => engine::Data::String(thing.clone())
+                engine::Type::String(thing) => engine::Type::String(thing.clone()),
+                engine::Type::Num(num) => engine::Type::Num(num.clone())
             },
-            None => panic!("{} is not defined in the current scope!")
+            None => panic!("[{}] is not defined in the current scope!", self.id)
         };
 
         data.insert("<value>".to_string(), value);
@@ -411,6 +419,31 @@ impl Node for IdNode {
     }
 
 
+}
+
+//Represents a numeric type.
+
+pub struct NumericNode {
+    value : u64
+}
+
+impl NumericNode {
+
+    pub fn new(val : u64) -> NumericNode {
+        NumericNode {value : val}
+    }
+}
+
+impl Node for NumericNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+        unimplemented!()
+    }
+
+    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
+        data.insert("<value>".to_string(), engine::Type::Num(self.value.clone()));
+        return data
+    }
 }
 
 //Temporarily represents the print keyword, which will be replaced with an actual print function later on.
@@ -443,12 +476,15 @@ impl Node for PrintNode {
                     "\n" => return,
                     _ => {
                         for c in next_tok.chars() {
-                            if c.is_alphabetic() {
+                            if c.is_ascii_alphabetic() {
                                 let id = IdNode::new(next_tok.clone());
                                 self.out = Some(Box::new(id));
                                 break
-                            }
-                            else {
+                            } else if c.is_ascii_digit() {
+                                let mut num = NumericNode::new(next_tok.parse().unwrap());
+                                self.out = Some(Box::new(num));
+                                break
+                            } else {
                                 panic!("Unexpected token [{:?}]!", next_tok)
                             }
                         }
@@ -459,14 +495,15 @@ impl Node for PrintNode {
         }
     }
 
-    fn run(&mut self, mut data: HashMap<String, engine::Data>) -> HashMap<String, engine::Data> {
+    fn run(&mut self, mut data: HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
         match &mut self.out {
             Some(node) => {
                 data = node.run(data);
 
                 match data.get("<value>") {
                     Some(value) => match value {
-                        engine::Data::String(thing) => println!("{}", thing)
+                        engine::Type::String(thing) => println!("{}", thing),
+                        engine::Type::Num(num) => println!("{}", num.to_string())
                     }
                     None => panic!("Something went wrong!")
                 }

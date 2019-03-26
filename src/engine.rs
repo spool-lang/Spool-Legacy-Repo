@@ -78,6 +78,7 @@ fn open_script(path : &PathBuf) -> File {
 
 //Data wrappers
 
-pub enum Data {
-    String(String)
+pub enum Type {
+    String(String),
+    Num(u64)
 }

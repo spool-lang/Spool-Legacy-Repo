@@ -3,6 +3,9 @@ use std::str::Chars;
 use std::collections::HashMap;
 use crate::engine;
 use std::process::id;
+use core::fmt::Alignment::Right;
+
+use nom::*;
 
 pub fn parse_file(contents : String) -> FileNode {
 
@@ -20,6 +23,7 @@ pub fn parse_file(contents : String) -> FileNode {
 
     return file_node
 }
+
 
 //Tokenizer for turning the contents of the file into a more easily digestible stream of tokens.
 pub struct MyFilter;
@@ -48,6 +52,7 @@ impl filters::Filter for MyFilter {
             '#' => keep(),
             '=' => keep(),
             ':' => keep(),
+            '+' => keep(),
             _ => match c.is_ascii_alphanumeric() {
                 true => part(),
                 false => match c.is_ascii_digit() {
@@ -88,7 +93,7 @@ impl TokenStream {
         else {
             let next_token : String = self.tokens[self.count as usize].clone();
             self.count += 1;
-            println!("{}", next_token.clone());
+            //println!("{}", next_token.clone());
             return Some(next_token)
         }
     }
@@ -431,6 +436,52 @@ impl NumericNode {
 
     pub fn new(val : u64) -> NumericNode {
         NumericNode {value : val}
+    }
+}
+
+//Nodes for expressions
+
+pub struct ExpressionNode {
+    entry_point : Option<Box<Node>>
+}
+
+impl ExpressionNode {
+
+    fn new(tokens : Vec<String>) -> ExpressionNode {
+
+
+
+
+
+        ExpressionNode {entry_point : None}
+    }
+}
+
+//Represents operations
+
+enum Operation {
+    Add
+}
+
+impl Operation {
+
+    fn operate(self, left : engine::Type, right : engine::Type) -> engine::Type {
+
+        match self {
+            Operation::Add => {
+                match left {
+                    engine::Type::Num(lnum) => {
+                        match right {
+                            engine::Type::Num(rnum) => {
+                                return engine::Type::Num((lnum.clone()) + (rnum.clone()))
+                            }
+                            _ => panic!("You can only do arithmetic on numbers!")
+                        }
+                    }
+                    _ => panic!("You can only do arithmetic on numbers!")
+                }
+            }
+        }
     }
 }
 

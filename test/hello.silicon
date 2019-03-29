@@ -7,7 +7,7 @@ main {
 
     print my_name
 
-    var number : Int = 1
+    var number : Int = 1 + 1
 
     print number
 }

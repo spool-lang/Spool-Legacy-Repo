@@ -4,9 +4,11 @@ use std::fs::File;
 use std::env;
 use std::process;
 use std::io::Read;
-use crate::parse;
-use crate::parse::Node;
+use crate::ast;
+use crate::ast::Node;
 use std::collections::HashMap;
+
+use crate::tokenizer;
 
 //Responsible for managing the program itself.
 
@@ -23,6 +25,8 @@ impl Program {
 
 pub fn run(path : PathBuf) {
 
+    tokenizer::parse();
+
     let root : Program = Program {
         root_dir : root_directory(&path)
     };
@@ -31,7 +35,7 @@ pub fn run(path : PathBuf) {
     let mut contents : String = "".to_string();
     main_class_file.read_to_string(&mut contents);
 
-    let mut program : parse::FileNode = parse::parse_file(contents);
+    let mut program : ast::FileNode = ast::parse_file(contents);
     program.run(HashMap::new());
 
     return;

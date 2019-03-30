@@ -1,0 +1,9 @@
+[package]
+name = "Silicon"
+version = "0.1.0"
+authors = ["RedstoneParadox <spinjitzu00@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tokesies = {git = "https://github.com/Jeffail/tokesies", branch = "master"}
+nom = "4.2.3"

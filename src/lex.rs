@@ -26,7 +26,8 @@ pub fn parse() {
     test_lexer.add_rule(LexRule(LexPattern::String("===".to_string(), true), LexPattern::None, 3));
     test_lexer.add_rule(LexRule(LexPattern::String(" ".to_string(), true), LexPattern::None, 1));
     test_lexer.add_rule(LexRule(LexPattern::String('"'.to_string(), true), LexPattern::String('"'.to_string(), true), 1));
-    let results : Vec<Tokens> = test_lexer.lex(r#"+ = == += ++ === "hi" "#.to_string());
+    test_lexer.add_rule(LexRule(LexPattern::String("/*".to_string(), true), LexPattern::String("*/".to_string().to_string(), true), 1));
+    let results : Vec<Tokens> = test_lexer.lex(r#"+ = == += ++ === /*This is a comment*/ "hi" "#.to_string());
 
     println!("Test lexer output!");
     for result in results {
@@ -63,6 +64,8 @@ impl Tokens {
                     let mut slice = lex.trim_start_matches('"');
                     slice = slice.trim_end_matches('"');
                     Some(AString(slice.to_string()))
+                } else if lex.starts_with("/*") {
+                    None
                 } else {
                     panic!("Unknown Token!")
                 }
@@ -199,19 +202,12 @@ impl Lexer {
                     },
                     LexPattern::String(pat, should) => {
 
-                        let mut next_char = self.next();
-
                         loop {
-
-                            if &next_char.to_string() == pat {
-                                self.current_token.push(next_char);
-                                break
+                            let next_char = self.next();
+                            self.current_token.push(next_char);
+                            if self.current_token.ends_with(pat.as_str()) {
+                                break;
                             }
-                            else {
-                                self.current_token.push(next_char);
-                                next_char = self.next();
-                            }
-
                         }
 
                         let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
@@ -221,7 +217,6 @@ impl Lexer {
                             None => {}
                         }
 
-                        println!("Current Token: {}", self.current_token);
                         self.current_token.clear();
                     }
                     _ => panic!("We're not there yet!")

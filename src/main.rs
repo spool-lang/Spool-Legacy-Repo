@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 mod engine;
 mod ast;
-mod tokenizer;
+mod lex;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

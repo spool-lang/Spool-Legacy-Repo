@@ -8,7 +8,7 @@ use crate::ast;
 use crate::ast::Node;
 use std::collections::HashMap;
 
-use crate::tokenizer;
+use crate::lex;
 
 //Responsible for managing the program itself.
 
@@ -25,7 +25,7 @@ impl Program {
 
 pub fn run(path : PathBuf) {
 
-    tokenizer::parse();
+    lex::parse();
 
     let root : Program = Program {
         root_dir : root_directory(&path)

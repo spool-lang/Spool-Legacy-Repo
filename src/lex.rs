@@ -14,6 +14,8 @@ use crate::lex::Tokens::Whitespace;
 use std::str::from_utf8;
 use crate::lex::Tokens::IdEquality;
 use crate::lex::Tokens::AString;
+use crate::lex::Tokens::Word;
+use crate::lex::Tokens::Num;
 
 pub fn parse() {
 
@@ -26,8 +28,10 @@ pub fn parse() {
     test_lexer.add_rule(LexRule(LexPattern::String("===".to_string(), true), LexPattern::None, 3));
     test_lexer.add_rule(LexRule(LexPattern::String(" ".to_string(), true), LexPattern::None, 1));
     test_lexer.add_rule(LexRule(LexPattern::String('"'.to_string(), true), LexPattern::String('"'.to_string(), true), 1));
+    test_lexer.add_rule(LexRule(LexPattern::Alphabetic(true), LexPattern::Alphanumeric(true), 1));
     test_lexer.add_rule(LexRule(LexPattern::String("/*".to_string(), true), LexPattern::String("*/".to_string().to_string(), true), 1));
-    let results : Vec<Tokens> = test_lexer.lex(r#"+ = == += ++ === /*This is a comment*/ "hi" "#.to_string());
+    test_lexer.add_rule(LexRule(LexPattern::Numeric(true), LexPattern::Numeric(true), 1));
+    let results : Vec<Tokens> = test_lexer.lex(r#"+ = == += ++ === /*This is a comment*/ "hi" aword 1111="#.to_string());
 
     println!("Test lexer output!");
     for result in results {
@@ -44,6 +48,8 @@ pub enum Tokens {
     Equality,
     IdEquality,
     AString(String),
+    Word(String),
+    Num(String),
     Whitespace
 }
 
@@ -67,7 +73,18 @@ impl Tokens {
                 } else if lex.starts_with("/*") {
                     None
                 } else {
-                    panic!("Unknown Token!")
+                    match lex.clone().chars().nth(0) {
+                        Some(c) => {
+                            if c.is_ascii_alphabetic() {
+                                Some(Word(lex))
+                            } else if c.is_ascii_digit() {
+                                Some(Num(lex))
+                            } else {
+                                panic!("Unknown Token!")
+                            }
+                        },
+                        None => panic!("Unknown Token!")
+                    }
                 }
             }
         }
@@ -92,6 +109,8 @@ impl ToString for Tokens {
                 string_string.push('"');
                 string_string
             },
+            Word(contents) => contents.clone(),
+            Num(contents) => contents.clone(),
             _ => "".to_string()
         };
 
@@ -101,18 +120,6 @@ impl ToString for Tokens {
 
 #[derive(Clone)]
 struct LexRule(LexPattern, LexPattern, usize);
-
-impl LexRule {
-
-    pub fn dup(&self) -> LexRule {
-
-        let start = self.0.clone();
-
-        let end = self.1.clone();
-
-        return LexRule(start, end, self.2.clone())
-    }
-}
 
 #[derive(Clone)]
 pub enum LexPattern {
@@ -218,7 +225,70 @@ impl Lexer {
                         }
 
                         self.current_token.clear();
-                    }
+                    },
+                    LexPattern::Alphabetic(should) => {
+
+                        loop {
+                            let next_char = self.next();
+                            if !(next_char.is_ascii_alphabetic()) {
+                                self.back();
+                                break;
+                            }
+                            self.current_token.push(next_char);
+                        }
+
+                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+
+                        match from_lex {
+                            Some(tokens) => lex_results.push(tokens),
+                            None => {}
+                        }
+
+                        self.current_token.clear();
+
+                    },
+                    LexPattern::Alphanumeric(should) => {
+
+                        loop {
+                            let next_char = self.next();
+                            if !(next_char.is_ascii_alphanumeric()) {
+                                self.back();
+                                break;
+                            }
+                            self.current_token.push(next_char);
+                        }
+
+                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+
+                        match from_lex {
+                            Some(tokens) => lex_results.push(tokens),
+                            None => {}
+                        }
+
+                        self.current_token.clear();
+
+                    },
+                    LexPattern::Numeric(should) => {
+
+                        loop {
+                            let next_char = self.next();
+                            if !(next_char.is_ascii_digit()) {
+                                self.back();
+                                break;
+                            }
+                            self.current_token.push(next_char);
+                        }
+
+                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+
+                        match from_lex {
+                            Some(tokens) => lex_results.push(tokens),
+                            None => {}
+                        }
+
+                        self.current_token.clear();
+
+                    },
                     _ => panic!("We're not there yet!")
                 }
                 None => {}

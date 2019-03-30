@@ -2,8 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5096a2dc-e566-4bb8-a1af-9232937161dc" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/lex.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tokenizer.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engine.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/engine.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tokenizer.rs" beforeDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <ignored path="$PROJECT_DIR$/out/" />
@@ -17,16 +20,16 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/tokenizer.rs">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/lex.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-464">
-              <caret line="198" column="59" selection-start-line="198" selection-start-column="59" selection-end-line="198" selection-end-column="59" />
+            <state relative-caret-position="179">
+              <caret line="24" column="55" selection-start-line="24" selection-start-column="55" selection-end-line="24" selection-end-column="55" />
               <folding>
-                <element signature="e#2988#2989#0" expanded="true" />
-                <element signature="e#3025#3026#0" expanded="true" />
-                <element signature="e#3275#3276#0" expanded="true" />
-                <element signature="e#3306#3307#0" expanded="true" />
+                <element signature="e#2901#2902#0" expanded="true" />
+                <element signature="e#2938#2939#0" expanded="true" />
+                <element signature="e#3188#3189#0" expanded="true" />
+                <element signature="e#3219#3220#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -53,8 +56,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/engine.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="274">
-              <caret line="76" column="28" lean-forward="true" selection-start-line="76" selection-start-column="28" selection-end-line="76" selection-end-column="28" />
+            <state relative-caret-position="-289">
+              <caret line="7" column="21" lean-forward="true" selection-start-line="7" selection-start-column="21" selection-end-line="7" selection-end-column="21" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="153">
+              <caret line="9" column="8" lean-forward="true" selection-start-line="9" selection-start-column="8" selection-end-line="9" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -83,7 +95,6 @@
         <option value="$PROJECT_DIR$/src/lib.rs" />
         <option value="$PROJECT_DIR$/src/components.rs" />
         <option value="$PROJECT_DIR$/src/nodes.rs" />
-        <option value="$PROJECT_DIR$/src/lex.rs" />
         <option value="$PROJECT_DIR$/test/hello.silicon" />
         <option value="$PROJECT_DIR$/Cargo.toml" />
         <option value="$PROJECT_DIR$/src/parse.rs" />
@@ -91,6 +102,7 @@
         <option value="$PROJECT_DIR$/src/ast.rs" />
         <option value="$PROJECT_DIR$/src/engine.rs" />
         <option value="$PROJECT_DIR$/src/tokenizer.rs" />
+        <option value="$PROJECT_DIR$/src/lex.rs" />
       </list>
     </option>
   </component>
@@ -131,7 +143,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553923046772" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553923091229" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../Web/rust-wasm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="project.structure.last.edited" value="Problems" />
@@ -342,7 +354,14 @@
       <option name="project" value="LOCAL" />
       <updated>1553910127857</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Lexer is now capable of lexing tokens of fixed length; currently cannot lex strings, identifiers, and comments.">
+      <created>1553923209919</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1553923209919</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TodoView">
@@ -356,8 +375,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49620253" visible="true" weight="0.23903178" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49620253" visible="true" weight="0.23903178" />
       <window_info id="Image Layers" order="1" />
       <window_info id="Designer" order="2" />
       <window_info id="UI Designer" order="3" />
@@ -372,7 +392,7 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3289689" />
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.18154311" side_tool="true" weight="0.39443535" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="8" sideWeight="0.8184569" visible="true" weight="0.37315875" />
+      <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.8184569" visible="true" weight="0.37315875" />
       <window_info anchor="bottom" id="Version Control" order="9" weight="0.3289689" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="1" weight="0.25" />
@@ -428,7 +448,8 @@
     <MESSAGE value="Unsigned longs are now supported (other types of integer values will come later)." />
     <MESSAGE value="Started work on new tokenizer" />
     <MESSAGE value="Almost completed the new tokenizer/lexer." />
-    <option name="LAST_COMMIT_MESSAGE" value="Almost completed the new tokenizer/lexer." />
+    <MESSAGE value="Lexer is now capable of lexing tokens of fixed length; currently cannot lex strings, identifiers, and comments." />
+    <option name="LAST_COMMIT_MESSAGE" value="Lexer is now capable of lexing tokens of fixed length; currently cannot lex strings, identifiers, and comments." />
   </component>
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
@@ -652,13 +673,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" column="14" selection-start-line="9" selection-start-column="14" selection-end-line="9" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.rustup/toolchains/stable-x86_64-pc-windows-msvc/lib/rustlib/src/rust/src/liballoc/macros.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="355">
@@ -766,23 +780,30 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/engine.rs">
+    <entry file="file://$PROJECT_DIR$/src/lex.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="274">
-          <caret line="76" column="28" lean-forward="true" selection-start-line="76" selection-start-column="28" selection-end-line="76" selection-end-column="28" />
+        <state relative-caret-position="179">
+          <caret line="24" column="55" selection-start-line="24" selection-start-column="55" selection-end-line="24" selection-end-column="55" />
+          <folding>
+            <element signature="e#2901#2902#0" expanded="true" />
+            <element signature="e#2938#2939#0" expanded="true" />
+            <element signature="e#3188#3189#0" expanded="true" />
+            <element signature="e#3219#3220#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/tokenizer.rs">
+    <entry file="file://$PROJECT_DIR$/src/engine.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-464">
-          <caret line="198" column="59" selection-start-line="198" selection-start-column="59" selection-end-line="198" selection-end-column="59" />
-          <folding>
-            <element signature="e#2988#2989#0" expanded="true" />
-            <element signature="e#3025#3026#0" expanded="true" />
-            <element signature="e#3275#3276#0" expanded="true" />
-            <element signature="e#3306#3307#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="-289">
+          <caret line="7" column="21" lean-forward="true" selection-start-line="7" selection-start-column="21" selection-end-line="7" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" column="8" lean-forward="true" selection-start-line="9" selection-start-column="8" selection-end-line="9" selection-end-column="8" />
         </state>
       </provider>
     </entry>

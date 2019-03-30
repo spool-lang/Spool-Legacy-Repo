@@ -27,6 +27,7 @@ pub fn run(path : PathBuf) {
 
     lex::parse();
 
+    /*
     let root : Program = Program {
         root_dir : root_directory(&path)
     };
@@ -38,6 +39,7 @@ pub fn run(path : PathBuf) {
     let mut program : ast::FileNode = ast::parse_file(contents);
     program.run(HashMap::new());
 
+    */
     return;
 }
 
@@ -65,7 +67,7 @@ fn class_path(path : &PathBuf, import : String) -> PathBuf {
     return class_path;
 }
 
-fn open_script(path : &PathBuf) -> File {
+pub fn open_script(path : &PathBuf) -> File {
     let mut path = path.clone();
     path.set_extension("silicon");
 

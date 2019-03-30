@@ -13,6 +13,7 @@ use crate::lex::Tokens::Plus;
 use crate::lex::Tokens::Whitespace;
 use std::str::from_utf8;
 use crate::lex::Tokens::IdEquality;
+use crate::lex::Tokens::AString;
 
 pub fn parse() {
 
@@ -24,7 +25,8 @@ pub fn parse() {
     test_lexer.add_rule(LexRule(LexPattern::String("==".to_string(), true), LexPattern::None, 2));
     test_lexer.add_rule(LexRule(LexPattern::String("===".to_string(), true), LexPattern::None, 3));
     test_lexer.add_rule(LexRule(LexPattern::String(" ".to_string(), true), LexPattern::None, 1));
-    let results : Vec<Tokens> = test_lexer.lex("+ = == += ++ ===".to_string());
+    test_lexer.add_rule(LexRule(LexPattern::String('"'.to_string(), true), LexPattern::String('"'.to_string(), true), 1));
+    let results : Vec<Tokens> = test_lexer.lex(r#"+ = == += ++ === "hi" "#.to_string());
 
     println!("Test lexer output!");
     for result in results {
@@ -40,6 +42,7 @@ pub enum Tokens {
     PlusAssign,
     Equality,
     IdEquality,
+    AString(String),
     Whitespace
 }
 
@@ -55,7 +58,15 @@ impl Tokens {
             "==" => Some(Equality),
             "===" => Some(IdEquality),
             " " => None,
-            _ => panic!("Unknown Token!")
+            _ => {
+                if lex.starts_with('"') {
+                    let mut slice = lex.trim_start_matches('"');
+                    slice = slice.trim_end_matches('"');
+                    Some(AString(slice.to_string()))
+                } else {
+                    panic!("Unknown Token!")
+                }
+            }
         }
     }
 }
@@ -64,16 +75,24 @@ impl ToString for Tokens {
 
     fn to_string(&self) -> String {
 
-        match &self {
-            Plus => "+",
-            Increment => "++",
-            Assign => "=",
-            PlusAssign => "+=",
-            Equality => "==",
-            IdEquality => "===",
-            Whitespace => " ",
-            _ => ""
-        }.to_string()
+        let result = match self {
+            Plus => "+".to_string(),
+            Increment => "++".to_string(),
+            Assign => "=".to_string(),
+            PlusAssign => "+=".to_string(),
+            Equality => "==".to_string(),
+            IdEquality => "===".to_string(),
+            Whitespace => " ".to_string(),
+            AString(contents) => {
+                let mut string_string: String = '"'.to_string();
+                string_string.push_str(contents.as_str());
+                string_string.push('"');
+                string_string
+            },
+            _ => "".to_string()
+        };
+
+        return result;
     }
 }
 
@@ -167,7 +186,7 @@ impl Lexer {
             let mut rule : &Option<LexRule> = &self.match_rules(clone_rules, 0);
 
             match &rule {
-                Some(a_rule) => match a_rule.1 {
+                Some(a_rule) => match &a_rule.1 {
                     LexPattern::None => {
                         let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
 
@@ -178,6 +197,33 @@ impl Lexer {
 
                         self.current_token.clear();
                     },
+                    LexPattern::String(pat, should) => {
+
+                        let mut next_char = self.next();
+
+                        loop {
+
+                            if &next_char.to_string() == pat {
+                                self.current_token.push(next_char);
+                                break
+                            }
+                            else {
+                                self.current_token.push(next_char);
+                                next_char = self.next();
+                            }
+
+                        }
+
+                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+
+                        match from_lex {
+                            Some(tokens) => lex_results.push(tokens),
+                            None => {}
+                        }
+
+                        println!("Current Token: {}", self.current_token);
+                        self.current_token.clear();
+                    }
                     _ => panic!("We're not there yet!")
                 }
                 None => {}

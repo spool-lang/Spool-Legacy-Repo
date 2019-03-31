@@ -1,44 +1,43 @@
 use std::ops::Deref;
 use std::str::Chars;
-use crate::lex::Tokens::Equality;
-use nom::*;
-use nom::IResult;
+use crate::lex::Token::Equality;
 use std::str;
 use std::sync::mpsc::channel;
 use crate::lex::LexPattern::Alphanumeric;
-use crate::lex::Tokens::PlusAssign;
-use crate::lex::Tokens::Assign;
-use crate::lex::Tokens::Increment;
-use crate::lex::Tokens::Plus;
+use crate::lex::Token::PlusAssign;
+use crate::lex::Token::Assign;
+use crate::lex::Token::Increment;
+use crate::lex::Token::Plus;
 use std::str::from_utf8;
-use crate::lex::Tokens::IdEquality;
-use crate::lex::Tokens::AString;
-use crate::lex::Tokens::Word;
-use crate::lex::Tokens::Num;
+use crate::lex::Token::IdEquality;
+use crate::lex::Token::Str;
+use crate::lex::Token::Word;
+use crate::lex::Token::Num;
 use std::fs::File;
 use crate::engine;
 use std::io::Read;
 use std::path::PathBuf;
-use crate::lex::Tokens::Main;
-use crate::lex::Tokens::BlockIn;
-use crate::lex::Tokens::BlockOut;
-use crate::lex::Tokens::Newline;
-use crate::lex::Tokens::Var;
-use crate::lex::Tokens::Const;
-use crate::lex::Tokens::New;
-use crate::lex::Tokens::Class;
-use crate::lex::Tokens::Ctor;
-use crate::lex::Tokens::Print;
-use crate::lex::Tokens::Return;
-use crate::lex::Tokens::ParenIn;
-use crate::lex::Tokens::ParenOut;
-use crate::lex::Tokens::Period;
-use crate::lex::Tokens::Comma;
-use crate::lex::Tokens::Colin;
-use crate::lex::Tokens::Func;
-use crate::lex::Tokens::ReturnType;
+use crate::lex::Token::Main;
+use crate::lex::Token::BlockIn;
+use crate::lex::Token::BlockOut;
+use crate::lex::Token::Newline;
+use crate::lex::Token::Var;
+use crate::lex::Token::Const;
+use crate::lex::Token::New;
+use crate::lex::Token::Class;
+use crate::lex::Token::Ctor;
+use crate::lex::Token::Print;
+use crate::lex::Token::Return;
+use crate::lex::Token::ParenIn;
+use crate::lex::Token::ParenOut;
+use crate::lex::Token::Period;
+use crate::lex::Token::Comma;
+use crate::lex::Token::Colin;
+use crate::lex::Token::Func;
+use crate::lex::Token::ReturnType;
+use crate::lex::Token::Hex;
 
-pub fn parse() {
+pub fn lex_string(input : String) -> Vec<Token> {
 
     let mut test_input = r#"
 
@@ -69,6 +68,11 @@ pub fn parse() {
 
         func giveMeString(left : Int, right : Int) -> String {
             return "I just returned something to you!"
+        }
+
+        func giveMeHex() -> Hex {
+            11
+            return 0x4B9
         }
 
     }
@@ -109,20 +113,25 @@ pub fn parse() {
     lexer.add_rule(LexPattern::String('"'.to_string(), true), LexPattern::String('"'.to_string(), true), 1);
     lexer.add_rule(LexPattern::Alphabetic(true), LexPattern::Alphanumeric(true), 1);
     lexer.add_rule(LexPattern::Numeric(true), LexPattern::Alphanumeric(true), 1);
+    lexer.add_rule(LexPattern::String("0x".to_string(), true), LexPattern::Hex(true), 2);
 
     //And newline
     lexer.add_token(LexPattern::String('\n'.to_string(), true), 1);
+    lexer.add_token(LexPattern::String("\r\n".to_string(), true), 2);
     lexer.add_token(LexPattern::String(" ".to_string(), true), 1);
-    let results : Vec<Tokens> = lexer.lex(test_input);
+    let results : Vec<Token> = lexer.lex(input);
 
-    println!("Test lexer output!");
-    for result in results {
-        print!("{} ", result.to_string())
+    println!("Lexer output!");
+    for result in &results {
+        print!("{:#?} ", result.to_string())
     }
-    println!("End test lexer output!");
+    println!("Lexer output!");
+
+    return results;
 }
 
-pub enum Tokens {
+#[derive(Clone)]
+pub enum Token {
     //Keywords
     Main,
     Var,
@@ -147,23 +156,28 @@ pub enum Tokens {
     Colin,
     ReturnType,
 
+    //Operators
+    Assign,
+
     //Newline
     Newline,
 
+    //Words and strings
+    Str(String),
+    Word(String),
+    Num(String),
+    Hex(String),
+
     Plus,
     Increment,
-    Assign,
     PlusAssign,
     Equality,
     IdEquality,
-    AString(String),
-    Word(String),
-    Num(String),
 }
 
-impl Tokens {
+impl Token {
 
-    fn from_lexer(lex : String) -> Option<Tokens> {
+    fn from_lexer(lex : String) -> Option<Token> {
 
         match lex.as_str() {
             //Keywords
@@ -194,6 +208,7 @@ impl Tokens {
 
             //Newline
             "\n" => Some(Newline),
+            "\r\n" => Some(Newline),
 
             "+" => Some(Plus),
             "++" => Some(Increment),
@@ -207,9 +222,11 @@ impl Tokens {
                 if lex.starts_with('"') {
                     let mut slice = lex.trim_start_matches('"');
                     slice = slice.trim_end_matches('"');
-                    Some(AString(slice.to_string()))
+                    Some(Str(slice.to_string()))
                 } else if lex.starts_with("#") || lex.starts_with("##") {
                     None
+                } else if lex.starts_with("0x") {
+                    Some(Hex(lex))
                 } else {
                     match lex.clone().chars().nth(0) {
                         Some(c) => {
@@ -229,7 +246,7 @@ impl Tokens {
     }
 }
 
-impl ToString for Tokens {
+impl ToString for Token {
 
     fn to_string(&self) -> String {
 
@@ -261,7 +278,7 @@ impl ToString for Tokens {
             ReturnType => "->".to_string(),
 
             //Words and strings.
-            AString(contents) => {
+            Str(contents) => {
                 let mut string_string: String = '"'.to_string();
                 string_string.push_str(contents.as_str());
                 string_string.push('"');
@@ -269,6 +286,7 @@ impl ToString for Tokens {
             },
             Word(contents) => contents.clone(),
             Num(contents) => contents.clone(),
+            Hex(contents) => contents.clone(),
 
             //Newline
             Newline => "\n".to_string(),
@@ -294,6 +312,7 @@ pub enum LexPattern {
     Alphabetic(bool),
     Numeric(bool),
     Alphanumeric(bool),
+    Hex(bool),
     None
 }
 
@@ -352,13 +371,13 @@ impl Lexer {
         return peeks
     }
 
-    fn lex(&mut self, input : String) -> Vec<Tokens> {
+    fn lex(&mut self, input : String) -> Vec<Token> {
 
         let mut collected_chars : Vec<char> = input.chars().collect();
         &self.chars.append(&mut collected_chars);
         let len : usize = self.chars.len().clone();
 
-        let mut lex_results : Vec<Tokens> = vec![];
+        let mut lex_results : Vec<Token> = vec![];
 
         loop {
             let next_char = self.next();
@@ -369,7 +388,7 @@ impl Lexer {
             match &rule {
                 Some(a_rule) => match &a_rule.1 {
                     LexPattern::None => {
-                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
 
                         match from_lex {
                             Some(tokens) => lex_results.push(tokens),
@@ -388,7 +407,7 @@ impl Lexer {
                             }
                         }
 
-                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
 
                         match from_lex {
                             Some(tokens) => lex_results.push(tokens),
@@ -408,7 +427,7 @@ impl Lexer {
                             self.current_token.push(next_char);
                         }
 
-                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
 
                         match from_lex {
                             Some(tokens) => lex_results.push(tokens),
@@ -429,7 +448,7 @@ impl Lexer {
                             self.current_token.push(next_char);
                         }
 
-                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
 
                         match from_lex {
                             Some(tokens) => lex_results.push(tokens),
@@ -450,7 +469,28 @@ impl Lexer {
                             self.current_token.push(next_char);
                         }
 
-                        let from_lex : Option<Tokens> = Tokens::from_lexer(self.current_token.clone());
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
+
+                        match from_lex {
+                            Some(tokens) => lex_results.push(tokens),
+                            None => {}
+                        }
+
+                        self.current_token.clear();
+
+                    },
+                    LexPattern::Hex(should) => {
+
+                        loop {
+                            let next_char = self.next();
+                            if !(next_char.is_ascii_hexdigit()) {
+                                self.back();
+                                break;
+                            }
+                            self.current_token.push(next_char);
+                        }
+
+                        let from_lex : Option<Token> = Token::from_lexer(self.current_token.clone());
 
                         match from_lex {
                             Some(tokens) => lex_results.push(tokens),
@@ -496,6 +536,10 @@ impl Lexer {
                 },
                 LexPattern::Alphanumeric(should) => match &self.current_token.clone().chars().nth(0) {
                     Some(c) => { if c.is_ascii_alphanumeric() { *should } else { !should } },
+                    None => { !should }
+                },
+                LexPattern::Hex(should) => match &self.current_token.clone().chars().nth(0) {
+                    Some(c) => { if c.is_ascii_hexdigit() { *should } else { !should } },
                     None => { !should }
                 },
                 LexPattern::None => { panic!("Pattern type None should not be used here!") }

@@ -3,11 +3,11 @@ main {
 
     print hello
 
-    var my_name : String = "I am the silicon programing language!"
+    var myName : String = "I am the silicon programing language!"
 
-    print my_name
+    print myName
 
-    var number : Int = 1 + 1
+    var number : Int = 1
 
     print number
 }

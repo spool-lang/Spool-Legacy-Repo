@@ -1,22 +1,14 @@
-use tokesies::*;
 use std::str::Chars;
 use std::collections::HashMap;
 use crate::engine;
 use std::process::id;
 use core::fmt::Alignment::Right;
 
-use nom::*;
+use crate::lex::Token;
 
-pub fn parse_file(contents : String) -> FileNode {
+pub fn build(tokens : Vec<Token>) -> FileNode {
 
-    let tokens : Vec<Token> = FilteredTokenizer::new(MyFilter{}, contents.as_str()).collect::<Vec<Token>>();
-
-    let mut token_strings : Vec<String> = vec![];
-    for t in tokens {
-        token_strings.push(t.term().to_string())
-    }
-
-    let mut token_stream : TokenStream = TokenStream {tokens : token_strings, count : 0};
+    let mut token_stream : TokenStream = TokenStream {tokens, count : 0};
     let mut file_node : FileNode = FileNode::new();
 
     file_node.parse(&mut token_stream);
@@ -24,74 +16,20 @@ pub fn parse_file(contents : String) -> FileNode {
     return file_node
 }
 
-
-//Tokenizer for turning the contents of the file into a more easily digestible stream of tokens.
-pub struct MyFilter;
-
-impl filters::Filter for MyFilter {
-    fn on_char(&self, c: &char) -> (bool, bool) {
-
-        match *c {
-            ' ' => keep(),
-            '\t' => drop(),
-            '\n' => keep(),
-            '\r' => drop(),
-            '\u{C}' => drop(),
-
-            ';' => keep(),
-            '_' => part(),
-            '{' => keep(),
-            '}' => keep(),
-            '(' => keep(),
-            ')' => keep(),
-            '[' => keep(),
-            ']' => keep(),
-            '<' => keep(),
-            '>' => keep(),
-            '!' => keep(),
-            '#' => keep(),
-            '=' => keep(),
-            ':' => keep(),
-            '+' => keep(),
-            _ => match c.is_ascii_alphanumeric() {
-                true => part(),
-                false => match c.is_ascii_digit() {
-                    true => part(),
-                    false => keep()
-                }
-            }
-        }
-    }
-}
-
-//Working with Tuples got too tedious.
-fn keep() -> (bool, bool) {
-    return (true, true)
-}
-
-fn drop() -> (bool, bool) {
-    return (true, false)
-}
-
-fn part() -> (bool, bool) {
-    return (false, false)
-}
-
-
 pub struct TokenStream {
-    tokens : Vec<String>,
+    tokens : Vec<Token>,
     count : u64
 }
 
 impl TokenStream {
 
-    pub fn next(&mut self) -> Option<String> {
+    pub fn next(&mut self) -> Option<Token> {
 
         if (self.count as usize) >= self.tokens.len() {
             return None
         }
         else {
-            let next_token : String = self.tokens[self.count as usize].clone();
+            let next_token : Token = self.tokens[self.count as usize].clone();
             self.count += 1;
             //println!("{}", next_token.clone());
             return Some(next_token)
@@ -132,13 +70,13 @@ impl Node for FileNode {
 
         loop {
             match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "main" => {
+                Some(token) => match token {
+                    Token::Main => {
                         let mut main_func : FunctionNode = FunctionNode::new_main();
                         main_func.parse(stream);
-                        self.main_functions.push(main_func)
+                        self.main_functions.push(main_func);
                     }
-                    _ => { if !(next_tok.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", next_tok) } }
+                    _ => panic!("Unexpected token!")
                 }
                 None => return
             }
@@ -171,32 +109,34 @@ impl FunctionNode {
 impl Node for FunctionNode {
 
     fn parse(&mut self, stream : &mut TokenStream) {
+
         loop {
             match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "{" => break,
-                    _ => { if !(next_tok.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", next_tok) } }
-                }
+                Some(token) => match token {
+                    Token::BlockIn => break,
+                    _ => panic!("Unexpected token!")
+                },
                 None => panic!("Unexpected EOF!")
             }
         }
 
         loop {
             match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "}" => return,
-                    "print" => {
+                Some(token) => match token {
+                    Token::BlockOut => return,
+                    Token::Print => {
                         let mut print_node : PrintNode = PrintNode::new();
                         print_node.parse(stream);
                         self.children.push(Box::new(print_node))
                     },
-                    "var" => {
+                    Token::Var => {
                         let mut var_node : VariableNode = VariableNode::new_var();
                         var_node.parse(stream);
                         self.children.push(Box::new(var_node))
                     }
-                    _ => { if !(next_tok.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", next_tok) } }
-                }
+                    Token::Newline => {}
+                    _ => panic!("Unexpected token {}!", token.to_string())
+                },
                 None => panic!("Unexpected EOF!")
             }
         }
@@ -234,96 +174,57 @@ impl Node for VariableNode {
 
     fn parse(&mut self, stream: &mut TokenStream) {
 
-        loop {
-            match stream.next() {
-                Some(token) => {
-
-                    for ch in token.chars() {
-                        if ch.is_alphabetic() {
-                            self.id = token.clone();
-                            break
-                        }
-                    }
-
-                    if self.id != "" {
-                        break
-                    }
-
-                    if !(token.clone().trim().is_empty()) {
-                        panic!("Unexpected Token [{:?}]!", token)
-                    }
-                }
-                None => panic!("Unexpected EOF!")
-            }
-        }
-        loop {
-            match stream.next() {
-                Some(token) => match token.as_str() {
-                    ":" => break,
-                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
-                }
-                None => panic!("Unexpected EOF!")
-            }
-        }
-        loop {
-            match stream.next() {
-                Some(token) => {
-                    for ch in token.chars() {
-                        if ch.is_alphabetic() {
-                            self.var_type = token.clone();
-                            break
-                        }
-                    }
-
-                    if self.var_type != "" {
-                        break
-                    }
-
-                    if !(token.clone().trim().is_empty()) {
-                        panic!("Unexpected Token [{:?}]!", token)
-                    }
-                }
-                None => panic!("Unexpected EOF!")
-            }
-        }
-        loop {
-            match stream.next() {
-                Some(token) => match token.as_str() {
-                    "=" => break,
-                    _ => { if !(token.clone().trim().is_empty()) { panic!("Unexpected Token [{:?}]!", token) } }
-                }
-                None => panic!("Unexpected EOF!")
-            }
+        match stream.next() {
+            Some(token) => match token {
+                Token::Word(the_word) => {self.id = the_word}
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
         }
 
-        loop {
-            match stream.next() {
-                Some(token) => match token.as_str() {
-                    "\"" => {
-                        let mut string_node : StringNode = StringNode::new();
-                        string_node.parse(stream);
-                        self.val = Some(Box::new(string_node));
-                        break
-                    },
-                    _ => {
-                        for c in token.chars() {
-                            if c.is_ascii_alphabetic() {
-                                let id = IdNode::new(token.clone());
-                                self.val = Some(Box::new(id));
-                                return;
-                            } else if c.is_ascii_digit() {
-                                let num = NumericNode::new(token.parse().unwrap());
-                                self.val = Some(Box::new(num));
-                                return;
-                            } else if !(token.clone().trim().is_empty()){
-                                panic!("Unexpected token [{:?}]!", token)
-                            }
-                        }
-                    }
-                }
-                None => panic!("Unexpected EOF!")
-            }
+        match stream.next() {
+            Some(token) => match token {
+                Token::Colin => {}
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
         }
+
+        match stream.next() {
+            Some(token) => match token {
+                Token::Word(the_word) => {self.var_type = the_word}
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
+        }
+
+        match stream.next() {
+            Some(token) => match token {
+                Token::Assign => {}
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
+        }
+
+        match stream.next() {
+            Some(token) => match token {
+                Token::Str(a_string) => {
+                    let str_node = StringNode::new(a_string.clone());
+                    self.val = Some(Box::new(str_node))
+                },
+                Token::Word(a_word) => {
+                    let id_node = IdNode::new(a_word);
+                    self.val = Some(Box::new(id_node));
+                }
+                Token::Num(a_num) => {
+                    let num_node : NumericNode = NumericNode::new(a_num.parse().unwrap());
+                    self.val = Some(Box::new(num_node));
+                }
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
+        }
+
     }
 
     fn run(&mut self, mut data: HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
@@ -356,13 +257,13 @@ impl Node for VariableNode {
 //A node representing a string.
 
 struct StringNode {
-    thing : String
+    the_str: String
 }
 
 impl StringNode {
 
-    fn new() -> StringNode {
-        StringNode {thing : "".to_string()}
+    fn new(the_str : String) -> StringNode {
+        StringNode { the_str }
     }
 
 }
@@ -370,19 +271,11 @@ impl StringNode {
 impl Node for StringNode {
 
     fn parse(&mut self, stream: &mut TokenStream) {
-        loop {
-            match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "\"" => break,
-                    _ => self.thing.push_str(next_tok.as_str())
-                },
-                None => panic!("Unexpected EOF!")
-            }
-        }
+
     }
 
     fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
-        data.insert("<value>".to_string(), engine::Type::String(self.thing.clone()));
+        data.insert("<value>".to_string(), engine::Type::String(self.the_str.clone()));
         return data
     }
 
@@ -439,6 +332,18 @@ impl NumericNode {
     }
 }
 
+impl Node for NumericNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+
+    }
+
+    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
+        data.insert("<value>".to_string(), engine::Type::Num(self.value.clone()));
+        return data
+    }
+}
+
 //Nodes for expressions
 
 pub struct ExpressionNode {
@@ -485,18 +390,6 @@ impl Operation {
     }
 }
 
-impl Node for NumericNode {
-
-    fn parse(&mut self, stream: &mut TokenStream) {
-        unimplemented!()
-    }
-
-    fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
-        data.insert("<value>".to_string(), engine::Type::Num(self.value.clone()));
-        return data
-    }
-}
-
 //Temporarily represents the print keyword, which will be replaced with an actual print function later on.
 
 pub struct PrintNode {
@@ -515,34 +408,23 @@ impl Node for PrintNode {
 
     fn parse(&mut self, stream : &mut TokenStream) {
 
-        loop {
-            match stream.next() {
-                Some(next_tok) => match next_tok.as_str() {
-                    "\"" => {
-                        let mut string_node : StringNode = StringNode::new();
-                        string_node.parse(stream);
-                        self.out = Some(Box::new(string_node))
-                    },
-                    " " => {}
-                    "\n" => return,
-                    _ => {
-                        for c in next_tok.chars() {
-                            if c.is_ascii_alphabetic() {
-                                let id = IdNode::new(next_tok.clone());
-                                self.out = Some(Box::new(id));
-                                break
-                            } else if c.is_ascii_digit() {
-                                let mut num = NumericNode::new(next_tok.parse().unwrap());
-                                self.out = Some(Box::new(num));
-                                break
-                            } else {
-                                panic!("Unexpected token [{:?}]!", next_tok)
-                            }
-                        }
-                    }
+        match stream.next() {
+            Some(token) => match token {
+                Token::Str(a_string) => {
+                    let str_node = StringNode::new(a_string.clone());
+                    self.out = Some(Box::new(str_node))
                 },
-                None => panic!("Unexpected EOF!")
-            }
+                Token::Word(a_word) => {
+                    let id_node = IdNode::new(a_word);
+                    self.out = Some(Box::new(id_node));
+                }
+                Token::Num(a_num) => {
+                    let num_node : NumericNode = NumericNode::new(a_num.parse().unwrap());
+                    self.out = Some(Box::new(num_node));
+                }
+                _ => panic!("Unexpected token!")
+            },
+            None => panic!("Unexpected EOF!")
         }
     }
 

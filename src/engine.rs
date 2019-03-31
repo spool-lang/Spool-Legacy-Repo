@@ -9,6 +9,8 @@ use crate::ast::Node;
 use std::collections::HashMap;
 
 use crate::lex;
+use crate::lex::Token;
+use crate::ast::FileNode;
 
 //Responsible for managing the program itself.
 
@@ -25,9 +27,6 @@ impl Program {
 
 pub fn run(path : PathBuf) {
 
-    lex::parse();
-
-    /*
     let root : Program = Program {
         root_dir : root_directory(&path)
     };
@@ -36,6 +35,11 @@ pub fn run(path : PathBuf) {
     let mut contents : String = "".to_string();
     main_class_file.read_to_string(&mut contents);
 
+    let tokens : Vec<Token> = lex::lex_string(contents);
+
+    let mut program : FileNode = ast::build(tokens);
+    program.run(HashMap::new());
+    /*
     let mut program : ast::FileNode = ast::parse_file(contents);
     program.run(HashMap::new());
 

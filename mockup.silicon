@@ -26,9 +26,9 @@ Notable symbols:
 "[]" array declaration.
 ##
 
-import package/Foo
-import package/Bar
-import package/subpackage/Bar alias OtherBar
+using package/Foo
+using package/Bar
+using package/subpackage/Bar alias OtherBar
 
 class MockUp {
 

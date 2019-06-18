@@ -1,0 +1,7 @@
+package stdlib
+
+# Class representing a string of characters; they can be declared literally "like so".
+public class String {
+
+
+}

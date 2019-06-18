@@ -1,0 +1,7 @@
+package stdlib.collections
+
+# Class representing an array of Objects.
+public class Array<T> {
+
+
+}

@@ -76,6 +76,7 @@ impl Node for FileNode {
                         main_func.parse(stream);
                         self.main_functions.push(main_func);
                     }
+                    Token::Newline => {},
                     _ => panic!("Unexpected token!")
                 }
                 None => return
@@ -113,6 +114,7 @@ impl Node for FunctionNode {
         loop {
             match stream.next() {
                 Some(token) => match token {
+                    Token::Newline => {},
                     Token::BlockIn => break,
                     _ => panic!("Unexpected token!")
                 },
@@ -134,7 +136,7 @@ impl Node for FunctionNode {
                         var_node.parse(stream);
                         self.children.push(Box::new(var_node))
                     }
-                    Token::Newline => {}
+                    Token::Newline => {},
                     _ => panic!("Unexpected token {}!", token.to_string())
                 },
                 None => panic!("Unexpected EOF!")
@@ -344,52 +346,6 @@ impl Node for NumericNode {
     }
 }
 
-//Nodes for expressions
-
-pub struct ExpressionNode {
-    entry_point : Option<Box<Node>>
-}
-
-impl ExpressionNode {
-
-    fn new(tokens : Vec<String>) -> ExpressionNode {
-
-
-
-
-
-        ExpressionNode {entry_point : None}
-    }
-}
-
-//Represents operations
-
-enum Operation {
-    Add
-}
-
-impl Operation {
-
-    fn operate(self, left : engine::Type, right : engine::Type) -> engine::Type {
-
-        match self {
-            Operation::Add => {
-                match left {
-                    engine::Type::Num(lnum) => {
-                        match right {
-                            engine::Type::Num(rnum) => {
-                                return engine::Type::Num((lnum.clone()) + (rnum.clone()))
-                            }
-                            _ => panic!("You can only do arithmetic on numbers!")
-                        }
-                    }
-                    _ => panic!("You can only do arithmetic on numbers!")
-                }
-            }
-        }
-    }
-}
-
 //Temporarily represents the print keyword, which will be replaced with an actual print function later on.
 
 pub struct PrintNode {
@@ -447,5 +403,94 @@ impl Node for PrintNode {
         data.remove("<value>");
 
         return data
+    }
+}
+
+/*
+Expressions
+*/
+struct OperationNode {
+    left : Option<Box<Node>>,
+    right : Option<Box<Node>>,
+    op : Operation
+}
+
+impl OperationNode {
+
+    pub fn new(operation : Operation) -> OperationNode {
+        OperationNode {
+            left: None,
+            right: None,
+            op: operation
+        }
+    }
+}
+
+enum Operation {
+    Addition
+}
+
+impl Operation {
+
+    fn get_operation(&self) -> fn(left : u64, right : u64) -> u64 {
+
+        return match self {
+            Operation::Addition => |left : u64, right : u64| {left + right}
+        }
+    }
+}
+
+
+//Expression parsing
+fn parse_expression(mut stream: TokenStream) -> Box<Node> {
+
+    let mut expression_nodes : Vec<Option<Box<Node>>> = vec![];
+
+    loop {
+        match stream.next() {
+            Some(token ) => {
+                match token {
+                    Token::Newline => break,
+                    Token::Num(num) => {
+                        let number_node = NumericNode::new(num.parse().unwrap());
+                        expression_nodes.push(Some(Box::new(number_node)));
+                    }
+                    Token::Plus => {
+                        let add_node = OperationNode
+                    },
+                    _ => panic!("Unexpected token!")
+                }
+            },
+            None => panic!("Unexpected EOF!")
+        }
+    }
+
+    loop {
+        //Loop through the vector of nodes to find operators.
+        for i in 0..expression_nodes.len() {
+
+
+        }
+
+        //Here we filter out all the nones
+        expression_nodes.retain(|x : &Option<Box<Node>>| {
+            match x {
+                Some(t) => true,
+                None => false,
+            }
+        });
+
+        //And break once there is only one node left
+        if expression_nodes.len() <= 1 {
+            break
+        }
+    }
+
+    match expression_nodes.pop() {
+        Some(opt) => match opt {
+            Some(node) => return node,
+            None => panic!("Something went wrong!")
+        },
+        None => panic!("Something went wrong!")
     }
 }

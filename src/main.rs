@@ -6,7 +6,7 @@ use Silicon::Config;
 use std::path::PathBuf;
 
 mod engine;
-mod ast;
+mod parse;
 mod lex;
 
 fn main() {

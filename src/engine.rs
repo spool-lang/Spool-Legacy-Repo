@@ -4,13 +4,13 @@ use std::fs::File;
 use std::env;
 use std::process;
 use std::io::Read;
-use crate::ast;
-use crate::ast::Node;
+use crate::parse;
+use crate::parse::Node;
 use std::collections::HashMap;
 
 use crate::lex;
 use crate::lex::Token;
-use crate::ast::FileNode;
+use crate::parse::FileNode;
 
 //Responsible for managing the program itself.
 
@@ -37,7 +37,7 @@ pub fn run(path : PathBuf) {
 
     let tokens : Vec<Token> = lex::lex_string(contents);
 
-    let mut program : FileNode = ast::build(tokens);
+    let mut program : FileNode = parse::build(tokens);
     program.run(HashMap::new());
     /*
     let mut program : ast::FileNode = ast::parse_file(contents);

@@ -1,13 +1,16 @@
+# This is a file demonstrating various features of the silicon programming language.
+
+
 main {
     var hello : String = "Hello, world!"
 
     print hello
 
-    var myName : String = "I am the silicon programing language!"
+    var myName : String = "I am the Silicon programing language!"
 
     print myName
 
-    var number : Int = 1
+    var number : Int = 1 + 1
 
     print number
 }

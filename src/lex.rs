@@ -125,7 +125,8 @@ pub fn lex_string(input : String) -> Vec<Token> {
     for result in &results {
         print!("{:#?} ", result.to_string())
     }
-    println!("Lexer output!");
+    println!("\nLexer output!");
+    println!();
 
     return results;
 }
@@ -142,7 +143,6 @@ pub enum Token {
     Func,
     Print,
     Return,
-
 
     //Brackets
     BlockIn,

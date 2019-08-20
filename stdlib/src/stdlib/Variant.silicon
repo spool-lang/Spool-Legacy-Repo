@@ -1,0 +1,15 @@
+package stdlib
+
+sealed class Variant<T, U> {
+
+    class TypeT<T> extends Variant<T, Object>, implements Box<T> {
+        constructor(t : T) {
+            boxedValue = t
+        }
+    }
+    class TypeU<U> extends Variant<Object, U>, implements Box<U> {
+        constructor(u : U) {
+            boxedValue = u
+        }
+    }
+}

@@ -1,0 +1,15 @@
+package stdlib
+
+/**
+ * Represents a boxed value. When a class implements `Box<T>`, any members
+ * of `Box#boxedValue` can be accessed without calling `Box#unwrap` first;
+ * this will be done implicitly by Silicon.
+ */
+interface Box<T> {
+    const boxedValue : T
+
+    func unwrap() -> T {
+        return boxedValue
+    }
+
+}

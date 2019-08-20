@@ -1,0 +1,20 @@
+package stdlib
+
+/**
+ * Optional is a special sealed class used to represent a situation in which a
+ * value may not be present. It has two subclasses: None, which represents no
+ * value, and Some, which contains a value that can be accessed by using
+ * Some#unwrap().
+ *
+ * Silicon also provides T? as a shorthand for Optional<T> and the keyword
+ * `none` for None<T>.
+ */
+public sealed class Optional<T> {
+    public object None<T> extends Optional<T>
+    public class Some<T> extends Optional<T>, implements Box<T> {
+
+        constructor(t : T) {
+            boxedValue = t;
+        }
+    }
+}

@@ -5,6 +5,7 @@ use std::process::id;
 use core::fmt::Alignment::Right;
 
 use crate::lex::Token;
+use std::any::Any;
 
 pub fn build(tokens : Vec<Token>) -> FileNode {
 
@@ -48,6 +49,10 @@ pub trait Node {
     fn parse(&mut self, stream : &mut TokenStream);
 
     fn run(&mut self, mut data : HashMap<String, engine::Type>) -> HashMap<String, engine::Type>;
+
+    fn is_operation(&self,) -> bool {
+        return false
+    }
 }
 
 //Represents a silicon file.
@@ -426,6 +431,21 @@ impl OperationNode {
     }
 }
 
+impl Node for OperationNode {
+
+    fn parse(&mut self, stream: &mut TokenStream) {
+        unimplemented!()
+    }
+
+    fn run(&mut self, mut data: HashMap<String, engine::Type>) -> HashMap<String, engine::Type> {
+        unimplemented!()
+    }
+
+    fn is_operation(&self) -> bool {
+        return true
+    }
+}
+
 enum Operation {
     Addition
 }
@@ -439,7 +459,6 @@ impl Operation {
         }
     }
 }
-
 
 //Expression parsing
 fn parse_expression(mut stream: TokenStream) -> Box<Node> {
@@ -455,9 +474,6 @@ fn parse_expression(mut stream: TokenStream) -> Box<Node> {
                         let number_node = NumericNode::new(num.parse().unwrap());
                         expression_nodes.push(Some(Box::new(number_node)));
                     }
-                    Token::Plus => {
-                        let add_node = OperationNode
-                    },
                     _ => panic!("Unexpected token!")
                 }
             },
@@ -469,7 +485,19 @@ fn parse_expression(mut stream: TokenStream) -> Box<Node> {
         //Loop through the vector of nodes to find operators.
         for i in 0..expression_nodes.len() {
 
+            if (i == 0 || i == expression_nodes.len() - 1) && expression_nodes[i].is_some() {
 
+                if expression_nodes[i].unwrap().is_operation() {
+                    panic!("Unexpected token!")
+                }
+            }
+            else if expression_nodes[i].is_some() {
+                let mut current_node = expression_nodes[i].unwrap();
+
+                if current_node.is_operation() && expression_nodes[i - 1].is_some() && expression_nodes[i + 1].is_some() {
+
+                }
+            }
         }
 
         //Here we filter out all the nones

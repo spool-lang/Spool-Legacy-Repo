@@ -1,6 +1,6 @@
 package stdlib
 
-# Parent class for all other classes in the Silicon programming language.
+// Parent class for all other classes in the Silicon programming language.
 public class Object {
 
     # Prints an object to the console; it will be converted to a string
@@ -8,6 +8,6 @@ public class Object {
     native func print(msg : Object)
 
     # Returns a string representation of this object.
-    native func toString() -> String
+    native func toString() -> String?
 
 }

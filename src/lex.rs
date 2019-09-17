@@ -1,3 +1,4 @@
+//Deprecated
 use std::ops::Deref;
 use std::str::Chars;
 use crate::lex::Token::Equality;

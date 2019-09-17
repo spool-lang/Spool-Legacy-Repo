@@ -1,3 +1,4 @@
+//Deprecated
 use std::str::Chars;
 use std::collections::HashMap;
 use crate::engine;

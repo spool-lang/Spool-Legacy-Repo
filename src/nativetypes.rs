@@ -1,4 +1,4 @@
-
+//Deprecated
 
 enum NativeType {
     Byte(),

@@ -9,6 +9,8 @@ mod engine;
 mod parse;
 mod lex;
 
+mod runtime;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 

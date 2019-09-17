@@ -1,9 +1,10 @@
 use std::rc::Rc;
 use string_interner::DefaultStringInterner;
 use string_interner::Sym;
+use std::collections::HashMap;
 
 pub struct VM {
-
+    class_registry : HashMap<Sym, Instance>
 }
 
 // OpCode instructions to follow. All instructions should be 4 bytes at the most.
@@ -32,11 +33,11 @@ pub enum Instance {
     //Decimal64(),
     //UDecimal64(),
     //Decimal128(),
-    //UDecimal128()
+    //UDecimal128(),
     Float32(f32),
     Float64(f64),
     //These are commented out for now but I would like to bring in the 'num' crate at some point
-    //to introduce these types.
+    //to introduce these types or make my own.
     //BigInt(),
     //UBigInt(),
     //BigFloat(),
@@ -47,10 +48,13 @@ pub enum Instance {
     Array(Vec<Instance>),
     //Represents a custom class instance.
     CustomInstance(Box<CustomInstance>),
+    //Represents a class object.
+    Class(Box<Class>)
 }
 
 // Represents a class declared in Silicon code:
 pub struct Class {
+    canonical_name : str,
     field_info : Vec<FieldInfo>
 }
 
@@ -66,11 +70,10 @@ pub enum AccessModifier {
     Internal
 }
 
-//Represents a custom class instance.
+// Represents an instance of a class that is not built into the VM.
 pub struct CustomInstance {
     class : Class,
     fields : Vec<Field>,
-
 }
 
 pub struct Field {

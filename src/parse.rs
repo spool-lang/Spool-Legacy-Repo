@@ -462,6 +462,7 @@ impl Operation {
 }
 
 //Expression parsing
+/*
 fn parse_expression(mut stream: TokenStream) -> Box<Node> {
 
     let mut expression_nodes : Vec<Option<Box<Node>>> = vec![];
@@ -523,3 +524,4 @@ fn parse_expression(mut stream: TokenStream) -> Box<Node> {
         None => panic!("Something went wrong!")
     }
 }
+*/

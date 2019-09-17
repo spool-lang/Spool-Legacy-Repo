@@ -13,7 +13,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() >= 2 {
-        engine::run(PathBuf::from(&args[1]))
+        //engine::run(PathBuf::from(&args[1]))
     }
     else {
         println!("Please specify the path to the main script!");

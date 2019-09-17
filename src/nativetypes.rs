@@ -17,6 +17,7 @@ enum NativeType {
     Empty
 }
 
+/*
 impl NativeType {
 
     fn call(self, name : &str, arguments : Vec<NativeType>) -> NativeType {
@@ -29,7 +30,7 @@ impl NativeType {
         return NativeType::Empty
     }
 }
-
+*/
 mod string_type {
 
     use super::NativeType;

@@ -1,4 +1,6 @@
 use std::rc::Rc;
+use string_interner::DefaultStringInterner;
+use string_interner::Sym;
 
 pub struct VM {
 
@@ -41,7 +43,7 @@ pub enum Instance {
     //BigDecimal(),
     //Complex(),
     Char(char),
-    String(Rc<str>),
+    String(Rc<Sym>),
     Array(Vec<Instance>),
     //Represents a custom class instance.
     CustomInstance(Box<CustomInstance>),

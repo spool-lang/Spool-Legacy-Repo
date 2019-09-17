@@ -5,3 +5,4 @@ authors = ["RedstoneParadox <spinjitzu00@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+string-interner = "0.7.1"

@@ -4,12 +4,39 @@ use string_interner::Sym;
 use std::collections::HashMap;
 
 pub struct VM {
-    class_registry : HashMap<Sym, Instance>
+    class_registry : HashMap<Sym, Instance>,
+    // Represents the current left and right operands as well as the result.
+    left : Option<Instance>,
+    right : Option<Instance>,
+    result : Option<Instance>
 }
 
-// OpCode instructions to follow. All instructions should be 4 bytes at the most.
+// OpCode instructions. All instructions should be 4 bytes at the most.
 pub enum OpCode {
-
+    /*
+    Pulls instances from the registry at the specified location or from
+    the result slot and sets them as the left or right operand.
+    */
+    SetLeft(u8),
+    SetLeftX(u16),
+    SetRight(u8),
+    SetRightX(i16),
+    /*
+    Operates on the left and right operands and places the result in the
+    result slot. If either the left or right slot is empty, the desired
+    left or right value was most likely a result of the previous
+    operation and will be pulled from the result slot.
+    */
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    /*
+    Pushes the Instance in the result slot back into the registry at the
+    specified location.
+    */
+    Push(u8),
+    PushX(u16),
 }
 
 // Represents instances created at runtime

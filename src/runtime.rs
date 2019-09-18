@@ -5,10 +5,26 @@ use std::collections::HashMap;
 
 pub struct VM {
     class_registry : HashMap<Sym, Instance>,
-    // Represents the current left and right operands as well as the result.
+    // Represents the current call frame.
+    frame : CallFrame
+}
+
+/*
+Holds the current offset in the registry of the call frame as well as some
+other useful information.
+*/
+pub struct CallFrame {
+    offset : u16,
+    /*
+    Represents the current left and right operands as well as the result.
+    The idea behind this is to reduce the amount of temporaries in the
+    register.
+    */
     left : Option<Instance>,
     right : Option<Instance>,
-    result : Option<Instance>
+    result : Option<Instance>,
+    // The previous call frame.
+    previous : Box<CallFrame>
 }
 
 // OpCode instructions. All instructions should be 4 bytes at the most.

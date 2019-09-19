@@ -13,7 +13,7 @@ pub struct VM {
     pub chunk : Chunk,
     chunk_size : usize,
     pub register : HashMap<u16, &'static Instance>,
-    pub operating_stack : Vec<Instance>
+    pub stack: Vec<Instance>
 }
 
 impl VM {
@@ -22,15 +22,15 @@ impl VM {
         VM {
             class_registry: Default::default(),
             frame: CallFrame {
-                offset: 0,
-                operator_offset: 0,
+                register_offset: 0,
+                stack_offset: 0,
                 ip: 0
             },
             frame_stack: vec![],
             chunk: Chunk::new(),
             chunk_size: 0,
             register: Default::default(),
-            operating_stack: vec![]
+            stack: vec![]
         }
     }
 
@@ -45,16 +45,8 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
-                        OpCode::Get(index) => {
-                            let instance = self.register.get(&u16::from(*index));
-                            match instance {
-                                Some(thing) => self.operating_stack.push(thing.clone().to_owned()),
-                                None => {panic!()}
-                            }
-                        }
-                        OpCode::Add => {
-                            self.add_operands()
-                        },
+                        OpCode::Get(index) => self.to_stack(&u16::from(*index)),
+                        OpCode::Add => self.add_operands(),
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -66,14 +58,22 @@ impl VM {
         return self
     }
 
+    fn push_stack(&mut self, index : &u16) {
+        let instance = self.register.get(index);
+        match instance {
+            Some(thing) => self.stack.push(thing.clone().to_owned()),
+            None => {panic!("Register slot {} was empty. Aborting program", index)}
+        }
+    }
+
     fn add_operands(&mut self) {
-        let right = self.operating_stack.pop();
-        let left = self.operating_stack.pop();
+        let right = self.stack.pop();
+        let left = self.stack.pop();
 
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
                 (Int16(left_num), Int16(right_num)) => {
-                    self.operating_stack.push(Int16(left_num + right_num))
+                    self.stack.push(Int16(left_num + right_num))
                 }
                 _ => {}
             }
@@ -81,9 +81,9 @@ impl VM {
     }
 
     pub fn get_current_result(&mut self) -> Instance {
-        return match self.operating_stack.pop() {
+        return match self.stack.pop() {
             Some(instance) => instance,
-            None => panic!()
+            None => panic!("The stack was empty!")
         }
     }
 }
@@ -93,9 +93,9 @@ Holds the current offset in the registry of the call frame as well as some
 other useful information.
 */
 pub struct CallFrame {
-    offset : usize,
-    operator_offset :usize,
-    ip : usize,
+    register_offset: usize,
+    stack_offset: usize,
+    ip: usize,
 }
 
 impl CallFrame {

@@ -5,7 +5,7 @@ use Silicon;
 use Silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::VM;
-use crate::opcode::OpCode::{Add, Get, Set, Divide, Multiply, Subtract, Power, IntNegate};
+use crate::opcode::OpCode::*;
 use crate::instance::{Instance, Instance::*};
 
 mod runtime;
@@ -18,39 +18,22 @@ fn main() {
 
     let mut vm = VM::new();
 
-    &mut vm.register.insert(0, Int16(8));
-    &mut vm.register.insert(1, Int16(16));
-    &mut vm.register.insert(2, Int16(4));
-    &mut vm.register.insert(4, Int16(12));
-    &mut vm.register.insert(5, Int16(10));
-    &mut vm.register.insert(6, Int16(2));
+    &mut vm.register.insert(0, Bool(true));
+    &mut vm.register.insert(1, Int16(2));
+    &mut vm.register.insert(2, Int16(1));
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Get(1));
-    &mut vm.chunk.write(Add);
-    &mut vm.chunk.write(Get(2));
-    &mut vm.chunk.write(Add);
-    &mut vm.chunk.write(Set(3));
-    &mut vm.chunk.write(Get(3));
-    &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Add);
-    &mut vm.chunk.write(Get(4));
-    &mut vm.chunk.write(Divide);
-    &mut vm.chunk.write(Get(5));
-    &mut vm.chunk.write(Multiply);
-    &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Subtract);
-    &mut vm.chunk.write(Get(6));
-    &mut vm.chunk.write(Power);
-    &mut vm.chunk.write(IntNegate);
-
+    &mut vm.chunk.write(LogicNegate);
 
     println!("Running the program!");
     vm = vm.run();
     let result = vm.get_current_result();
     if let Int16(i) = result {
         print!("And the result is... {}", i)
+    }
+    else if let Bool(value) = result {
+        print!("And the result is... {}", value)
     }
 
     /*

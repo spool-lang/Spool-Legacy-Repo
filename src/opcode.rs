@@ -17,6 +17,7 @@ pub enum OpCode {
     Divide,
     Power,
     IntNegate,
+    LogicNegate,
     /*
     Pops the top value off of the stack and pushes it to the register at
     the specified location. X variant is used when the location is

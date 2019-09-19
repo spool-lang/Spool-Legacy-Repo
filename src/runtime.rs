@@ -58,6 +58,7 @@ impl VM {
                         OpCode::Divide => self.divide_operands(),
                         OpCode::Power => self.pow_operands(),
                         OpCode::IntNegate => self.negate_operand(),
+                        OpCode::LogicNegate => self.logic_negate_operand(),
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -157,6 +158,16 @@ impl VM {
         if let Some(operand_i) = operand {
             match operand_i {
                 Int16(num) => self.stack.push(Int16(-num)),
+                _ => panic!("The operand cannot be negated!")
+            }
+        }
+    }
+
+    fn logic_negate_operand(&mut self) {
+        let operand = self.stack.pop();
+        if let Some(operand_i) = operand {
+            match operand_i {
+                Bool(value) => self.stack.push(Bool(!value)),
                 _ => panic!("The operand cannot be negated!")
             }
         }

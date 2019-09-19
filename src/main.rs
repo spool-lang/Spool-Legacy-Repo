@@ -5,7 +5,7 @@ use Silicon;
 use Silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::VM;
-use crate::opcode::OpCode::{Add, Get, Set, Divide, Multiply, Subtract};
+use crate::opcode::OpCode::{Add, Get, Set, Divide, Multiply, Subtract, Power, IntNegate};
 use crate::instance::{Instance, Instance::*};
 
 mod runtime;
@@ -23,6 +23,7 @@ fn main() {
     &mut vm.register.insert(2, Int16(4));
     &mut vm.register.insert(4, Int16(12));
     &mut vm.register.insert(5, Int16(10));
+    &mut vm.register.insert(6, Int16(2));
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(0));
@@ -40,6 +41,9 @@ fn main() {
     &mut vm.chunk.write(Multiply);
     &mut vm.chunk.write(Get(0));
     &mut vm.chunk.write(Subtract);
+    &mut vm.chunk.write(Get(6));
+    &mut vm.chunk.write(Power);
+    &mut vm.chunk.write(IntNegate);
 
 
     println!("Running the program!");

@@ -1,24 +1,26 @@
 // OpCode instructions. All instructions should be 4 bytes at the most.
 pub enum OpCode {
     /*
-    Pulls instances from the registry at the specified location or from
-    the result slot and puts them onto the operating stack.
+    Tells the VM to pull an instance from the register at the specified
+    location and move it to the stack. X variant is used when the
+    location is greater than 255.
     */
     Get(u8),
     GetX(u16),
     /*
-    Operates on the left and right operands and places the result in the
-    result slot. If either the left or right slot is empty, the desired
-    left or right value was most likely a result of the previous
-    operation and will be pulled from the result slot.
+    Tells the VM to pop the top two values off of the stack (or just one
+    if unary) and perform the specified operation on them.
     */
     Add,
     Subtract,
     Multiply,
     Divide,
+    Power,
+    IntNegate,
     /*
-    Pushes the Instance in the result slot back into the registry at the
-    specified location.
+    Pops the top value off of the stack and pushes it to the register at
+    the specified location. X variant is used when the location is
+    greater than 255.
     */
     Set(u8),
     SetX(u16),

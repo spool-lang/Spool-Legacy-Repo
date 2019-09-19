@@ -2,11 +2,85 @@ use std::rc::Rc;
 use string_interner::DefaultStringInterner;
 use string_interner::Sym;
 use std::collections::HashMap;
+use std::slice::Chunks;
+use crate::runtime::Instance::Int16;
 
 pub struct VM {
     class_registry : HashMap<Sym, Instance>,
     // Represents the current call frame.
-    frame : CallFrame
+    pub frame : CallFrame,
+    frame_stack : Vec<CallFrame>,
+    pub chunk : Chunk,
+    chunk_size : usize,
+    pub register : HashMap<u16, &'static Instance>
+}
+
+impl VM {
+
+    pub fn new() -> VM {
+        VM {
+            class_registry: Default::default(),
+            frame: CallFrame {
+                offset: 0,
+                left: None,
+                right: None,
+                result: None,
+                ip: 0
+            },
+            frame_stack: vec![],
+            chunk: Chunk::new(),
+            chunk_size: 0,
+            register: Default::default()
+        }
+    }
+
+    pub fn run(mut self) -> VM {
+        self.chunk_size = self.chunk.op_codes.len();
+
+        let mut pt = 0;
+        loop {
+            let op = self.chunk.get(pt);
+            println!("Position: {}", pt);
+
+            match op {
+                Some(code) => {
+                    match code {
+                        OpCode::SetLeft(index) => {
+                            let instance = self.register.get(&(*index as u16));
+                            match instance {
+                                Some(i) => {
+                                    self.frame.set_left(i)
+                                }
+                                None => panic!("Invalid register key!")
+                            }
+                        },
+                        OpCode::SetRight(index) => {
+                            let instance = self.register.get(&(*index as u16));
+                            match instance {
+                                Some(i) => {
+                                    self.frame.set_right(i)
+                                }
+                                None => panic!("Invalid register key!")
+                            }
+                        },
+                        OpCode::Add => self.frame.add(),
+                        _ => panic!("Unknown OpCode!")
+                    }
+                }
+                None => break
+            }
+            pt = pt + 1;
+        }
+
+        return self
+    }
+
+    pub fn get_current_result(self) -> Instance {
+        match self.frame.result {
+            Some(i) => i,
+            None => panic!()
+        }
+    }
 }
 
 /*
@@ -14,17 +88,87 @@ Holds the current offset in the registry of the call frame as well as some
 other useful information.
 */
 pub struct CallFrame {
-    offset : u16,
+    offset : usize,
     /*
     Represents the current left and right operands as well as the result.
     The idea behind this is to reduce the amount of temporaries in the
     register.
     */
-    left : Option<Instance>,
-    right : Option<Instance>,
-    result : Option<Instance>,
-    // The previous call frame.
-    previous : Box<CallFrame>
+    left : Option<&'static Instance>,
+    right : Option<&'static Instance>,
+    pub result : Option<Instance>,
+    ip : usize,
+}
+
+impl CallFrame {
+    pub fn current_position(&self) -> usize {
+        return self.ip
+    }
+
+    pub fn set_left(&mut self, val : &'static Instance) {
+        self.left = Some(val);
+    }
+
+    pub fn set_right(&mut self, val : &'static Instance) {
+        self.right = Some(val)
+    }
+
+    pub fn set_result(&mut self, val : Instance) {
+        self.result = Some(val)
+    }
+
+    pub fn clear_operands(&mut self) {
+        self.left = None;
+        self.right = None;
+    }
+
+    pub fn add(&mut self) {
+        if let (Some(left), Some(right)) = (self.left, self.right) {
+            match (left, right) {
+                (Int16(l_num), Int16(r_num)) => {
+                    let sum = l_num + r_num;
+                    self.set_result(Int16(sum))
+                },
+                _ => {}
+            }
+        }
+    }
+}
+
+pub enum ExecutionResult {
+    OK,
+    ERR,
+    END
+}
+
+pub struct Chunk {
+    op_codes : Vec<OpCode>,
+    is_locked : bool
+}
+
+impl Chunk {
+    fn new() -> Chunk {
+        Chunk {
+            op_codes: vec![],
+            is_locked: false
+        }
+    }
+
+    pub fn write(&mut self, op : OpCode) {
+        if self.is_locked {
+            panic!("Attempted to write to locked chunk!")
+        }
+        self.op_codes.push(op)
+    }
+
+    fn lock(&mut self) {
+        self.is_locked = true;
+    }
+
+    fn get(&self, pt : usize) -> Option<&OpCode> {
+        println!("Getting an OpCode!");
+        return self.op_codes.get(pt)
+    }
 }
 
 // OpCode instructions. All instructions should be 4 bytes at the most.
@@ -97,7 +241,7 @@ pub enum Instance {
 
 // Represents a class declared in Silicon code:
 pub struct Class {
-    canonical_name : str,
+    canonical_name : &'static str,
     field_info : Vec<FieldInfo>
 }
 

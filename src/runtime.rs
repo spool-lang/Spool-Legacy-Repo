@@ -48,6 +48,9 @@ impl VM {
                         OpCode::Get(index) => self.push_stack(&u16::from(*index)),
                         OpCode::Set(index) => self.pop_stack(&u16::from(*index)),
                         OpCode::Add => self.add_operands(),
+                        OpCode::Subtract => self.subtract_operands(),
+                        OpCode::Multiply => self.multiply_operands(),
+                        OpCode::Divide => self.divide_operands(),
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -82,6 +85,48 @@ impl VM {
             match (left_i, right_i) {
                 (Int16(left_num), Int16(right_num)) => {
                     self.stack.push(Int16(left_num + right_num))
+                }
+                _ => panic!("The operands cannot be added!")
+            }
+        }
+    }
+
+    fn subtract_operands(&mut self) {
+        let right = self.stack.pop();
+        let left = self.stack.pop();
+
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => {
+                    self.stack.push(Int16(left_num - right_num))
+                }
+                _ => panic!("The operands cannot be added!")
+            }
+        }
+    }
+
+    fn multiply_operands(&mut self) {
+        let right = self.stack.pop();
+        let left = self.stack.pop();
+
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => {
+                    self.stack.push(Int16(left_num * right_num))
+                }
+                _ => panic!("The operands cannot be added!")
+            }
+        }
+    }
+
+    fn divide_operands(&mut self) {
+        let right = self.stack.pop();
+        let left = self.stack.pop();
+
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => {
+                    self.stack.push(Int16(left_num / right_num))
                 }
                 _ => panic!("The operands cannot be added!")
             }

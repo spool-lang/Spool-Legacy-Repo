@@ -12,7 +12,8 @@ pub struct VM {
     frame_stack : Vec<CallFrame>,
     pub chunk : Chunk,
     chunk_size : usize,
-    pub register : HashMap<u16, &'static Instance>
+    pub register : HashMap<u16, &'static Instance>,
+    pub operating_stack : Vec<Instance>
 }
 
 impl VM {
@@ -22,15 +23,14 @@ impl VM {
             class_registry: Default::default(),
             frame: CallFrame {
                 offset: 0,
-                left: None,
-                right: None,
-                result: None,
+                operator_offset: 0,
                 ip: 0
             },
             frame_stack: vec![],
             chunk: Chunk::new(),
             chunk_size: 0,
-            register: Default::default()
+            register: Default::default(),
+            operating_stack: vec![]
         }
     }
 
@@ -45,24 +45,13 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
-                        OpCode::SetLeft(index) => {
-                            let instance = self.register.get(&(*index as u16));
+                        OpCode::Get(index) => {
+                            let instance = self.register.get(&u16::from(*index));
                             match instance {
-                                Some(i) => {
-                                    self.frame.set_left(i)
-                                }
-                                None => panic!("Invalid register key!")
+                                Some(thing) => self.operating_stack.push(thing.clone().to_owned()),
+                                None => {panic!()}
                             }
-                        },
-                        OpCode::SetRight(index) => {
-                            let instance = self.register.get(&(*index as u16));
-                            match instance {
-                                Some(i) => {
-                                    self.frame.set_right(i)
-                                }
-                                None => panic!("Invalid register key!")
-                            }
-                        },
+                        }
                         OpCode::Add => {
                             self.add_operands()
                         },
@@ -78,21 +67,22 @@ impl VM {
     }
 
     fn add_operands(&mut self) {
-        if let (Some(left), Some(right)) = (&self.frame.left, &self.frame.right) {
-            match (left, right) {
-                (Int16(l_num), Int16(r_num)) => {
-                    let sum = l_num + r_num;
-                    self.frame.set_result(Int16(sum));
-                    self.frame.clear_operands();
+        let right = self.operating_stack.pop();
+        let left = self.operating_stack.pop();
+
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => {
+                    self.operating_stack.push(Int16(left_num + right_num))
                 }
                 _ => {}
             }
         }
     }
 
-    pub fn get_current_result(self) -> Instance {
-        match self.frame.result {
-            Some(i) => i,
+    pub fn get_current_result(&mut self) -> Instance {
+        return match self.operating_stack.pop() {
+            Some(instance) => instance,
             None => panic!()
         }
     }
@@ -104,45 +94,13 @@ other useful information.
 */
 pub struct CallFrame {
     offset : usize,
-    /*
-    Represents the current left and right operands as well as the result.
-    The idea behind this is to reduce the amount of temporaries in the
-    register.
-    */
-    left : Option<&'static Instance>,
-    right : Option<&'static Instance>,
-    pub result : Option<Instance>,
+    operator_offset :usize,
     ip : usize,
 }
 
 impl CallFrame {
     pub fn current_position(&self) -> usize {
         return self.ip
-    }
-
-    pub fn set_left(&mut self, val : &'static Instance) {
-        self.left = Some(val);
-    }
-
-    pub fn set_right(&mut self, val : &'static Instance) {
-        self.right = Some(val)
-    }
-
-    pub fn set_result(&mut self, val : Instance) {
-        self.result = Some(val)
-    }
-
-    pub fn clear_operands(&mut self) {
-        self.left = None;
-        self.right = None;
-    }
-
-    pub fn clear_result(&mut self) {
-        self.result = None
-    }
-
-    pub fn get_result(&self) -> &Option<Instance> {
-        return &self.result;
     }
 }
 
@@ -186,12 +144,10 @@ impl Chunk {
 pub enum OpCode {
     /*
     Pulls instances from the registry at the specified location or from
-    the result slot and sets them as the left or right operand.
+    the result slot and puts them onto the operating stack.
     */
-    SetLeft(u8),
-    SetLeftX(u16),
-    SetRight(u8),
-    SetRightX(i16),
+    Get(u8),
+    GetX(u16),
     /*
     Operates on the left and right operands and places the result in the
     result slot. If either the left or right slot is empty, the desired
@@ -211,6 +167,7 @@ pub enum OpCode {
 }
 
 // Represents instances created at runtime
+#[derive(Clone)]
 pub enum Instance {
     Bool(bool),
     Byte(i8),
@@ -245,9 +202,9 @@ pub enum Instance {
     String(Rc<Sym>),
     Array(Vec<Instance>),
     //Represents a custom class instance.
-    CustomInstance(Box<CustomInstance>),
+    //CustomInstance(Box<CustomInstance>),
     //Represents a class object.
-    Class(Box<Class>)
+    //Class(Box<Class>)
 }
 
 // Represents a class declared in Silicon code:

@@ -6,7 +6,7 @@ use Silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::VM;
 use crate::runtime::Instance::Int16;
-use crate::runtime::OpCode::{SetLeft, SetRight, Add};
+use crate::runtime::OpCode::{Add, Get};
 
 mod engine;
 mod parse;
@@ -17,14 +17,15 @@ mod runtime;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+
     let mut vm = VM::new();
 
     &mut vm.register.insert(0, &Int16(8));
     &mut vm.register.insert(1, &Int16(8));
 
     println!("Writing to the chunk!");
-    &mut vm.chunk.write(SetLeft(0));
-    &mut vm.chunk.write(SetRight(1));
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(Get(1));
     &mut vm.chunk.write(Add);
 
     println!("Running the program!");

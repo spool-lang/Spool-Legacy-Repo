@@ -63,7 +63,9 @@ impl VM {
                                 None => panic!("Invalid register key!")
                             }
                         },
-                        OpCode::Add => self.frame.add(),
+                        OpCode::Add => {
+                            self.add_operands()
+                        },
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -73,6 +75,19 @@ impl VM {
         }
 
         return self
+    }
+
+    fn add_operands(&mut self) {
+        if let (Some(left), Some(right)) = (&self.frame.left, &self.frame.right) {
+            match (left, right) {
+                (Int16(l_num), Int16(r_num)) => {
+                    let sum = l_num + r_num;
+                    self.frame.set_result(Int16(sum));
+                    self.frame.clear_operands();
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn get_current_result(self) -> Instance {
@@ -122,16 +137,12 @@ impl CallFrame {
         self.right = None;
     }
 
-    pub fn add(&mut self) {
-        if let (Some(left), Some(right)) = (self.left, self.right) {
-            match (left, right) {
-                (Int16(l_num), Int16(r_num)) => {
-                    let sum = l_num + r_num;
-                    self.set_result(Int16(sum))
-                },
-                _ => {}
-            }
-        }
+    pub fn clear_result(&mut self) {
+        self.result = None
+    }
+
+    pub fn get_result(&self) -> &Option<Instance> {
+        return &self.result;
     }
 }
 

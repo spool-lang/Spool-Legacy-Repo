@@ -12,7 +12,7 @@ pub struct VM {
     frame_stack : Vec<CallFrame>,
     pub chunk : Chunk,
     chunk_size : usize,
-    pub register : HashMap<u16, &'static Instance>,
+    pub register : HashMap<u16, Instance>,
     pub stack: Vec<Instance>
 }
 
@@ -45,7 +45,8 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
-                        OpCode::Get(index) => self.to_stack(&u16::from(*index)),
+                        OpCode::Get(index) => self.push_stack(&u16::from(*index)),
+                        OpCode::Set(index) => self.pop_stack(&u16::from(*index)),
                         OpCode::Add => self.add_operands(),
                         _ => panic!("Unknown OpCode!")
                     }
@@ -66,6 +67,13 @@ impl VM {
         }
     }
 
+    fn pop_stack(&mut self, index: &u16) {
+        match self.stack.pop() {
+            Some(instance) => self.register.insert(*index, instance),
+            None => panic!("The stack was empty!")
+        };
+    }
+
     fn add_operands(&mut self) {
         let right = self.stack.pop();
         let left = self.stack.pop();
@@ -75,7 +83,7 @@ impl VM {
                 (Int16(left_num), Int16(right_num)) => {
                     self.stack.push(Int16(left_num + right_num))
                 }
-                _ => {}
+                _ => panic!("The operands cannot be added!")
             }
         }
     }
@@ -162,8 +170,8 @@ pub enum OpCode {
     Pushes the Instance in the result slot back into the registry at the
     specified location.
     */
-    Push(u8),
-    PushX(u16),
+    Set(u8),
+    SetX(u16),
 }
 
 // Represents instances created at runtime

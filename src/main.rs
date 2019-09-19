@@ -8,10 +8,6 @@ use crate::runtime::VM;
 use crate::runtime::Instance::Int16;
 use crate::runtime::OpCode::{Add, Get, Set, Divide, Multiply, Subtract};
 
-mod engine;
-mod parse;
-mod lex;
-
 mod runtime;
 
 fn main() {

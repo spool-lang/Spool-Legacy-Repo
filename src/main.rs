@@ -5,10 +5,12 @@ use Silicon;
 use Silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::VM;
-use crate::runtime::Instance::Int16;
-use crate::runtime::OpCode::{Add, Get, Set, Divide, Multiply, Subtract};
+use crate::opcode::OpCode::{Add, Get, Set, Divide, Multiply, Subtract};
+use crate::instance::{Instance, Instance::*};
 
 mod runtime;
+mod opcode;
+mod instance;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

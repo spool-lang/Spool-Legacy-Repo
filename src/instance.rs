@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use string_interner::DefaultStringInterner;
 use string_interner::Sym;
+use crate::opcode::Chunk;
 
 // Represents instances created at runtime
 #[derive(Clone, Debug)]
@@ -70,4 +71,18 @@ pub struct CustomInstance {
 pub struct Field {
     field_info : FieldInfo,
     value : Instance,
+}
+
+pub struct Function {
+    arity: u8,
+    chunk: Chunk
+}
+
+impl Function {
+    fn get_chunk(&self, arg_count: u8) -> &Chunk {
+        if arg_count == self.arity {
+            return &self.chunk
+        }
+        panic!("Argument count does not match the arity!")
+    }
 }

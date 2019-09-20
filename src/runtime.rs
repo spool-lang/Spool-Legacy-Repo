@@ -19,7 +19,6 @@ pub struct VM {
     chunk_size: usize,
     pub register: HashMap<u16, Instance>,
     pub stack: Vec<Instance>,
-    pub jump_table: HashMap<u16, usize>,
     pub pc : usize
 }
 
@@ -38,7 +37,6 @@ impl VM {
             chunk_size: 0,
             register: Default::default(),
             stack: vec![],
-            jump_table: Default::default(),
             pc: 0
         }
     }
@@ -222,7 +220,7 @@ impl VM {
     }
 
     fn jump(&mut self, jump_index: u16) {
-        match self.jump_table.get(&jump_index) {
+        match self.chunk.jump_table.get(&jump_index) {
             Some(jump_point) => {self.pc = *jump_point; },
             None => panic!("Jump point does not exist")
         }

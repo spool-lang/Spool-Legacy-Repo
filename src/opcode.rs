@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 // OpCode instructions. All instructions should be 4 bytes at the most.
 pub enum OpCode {
     /*
@@ -44,14 +46,16 @@ pub enum OpCode {
 
 pub struct Chunk {
     pub op_codes : Vec<OpCode>,
-    pub is_locked : bool
+    pub is_locked : bool,
+    pub jump_table: HashMap<u16, usize>,
 }
 
 impl Chunk {
     pub fn new() -> Chunk {
         Chunk {
             op_codes: vec![],
-            is_locked: false
+            is_locked: false,
+            jump_table: Default::default()
         }
     }
 

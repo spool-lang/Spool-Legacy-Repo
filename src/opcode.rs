@@ -4,6 +4,12 @@ use crate::instance::Instance;
 // OpCode instructions. All instructions should be 4 bytes at the most.
 pub enum OpCode {
     /*
+    OpCodes for popping true or false onto the stack since a bool only
+    has two possible values.
+    */
+    GetTrue,
+    GetFalse,
+    /*
     Tells the VM to pull an instance from the register at the specified
     location and move it to the stack. If the bool is true, it will
     grab from the constants table instead.

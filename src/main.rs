@@ -23,7 +23,7 @@ fn main() {
     &mut vm.chunk.jump_table.insert(0, 5);
 
     println!("Writing to the chunk!");
-    &mut vm.chunk.write(Get(true, 0));
+    &mut vm.chunk.write(GetFalse);
     &mut vm.chunk.write(Print);
 
     println!("Running the program!");

@@ -51,6 +51,8 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
+                        OpCode::GetTrue => self.stack.push(Bool(true)),
+                        OpCode::GetFalse => self.stack.push(Bool(false)),
                         OpCode::Get(get_const, index) => self.push_stack(*index, *get_const),
                         OpCode::Set(index) => self.pop_stack(*index),
                         OpCode::Add => self.add_operands(),

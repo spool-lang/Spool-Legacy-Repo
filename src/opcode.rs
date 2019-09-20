@@ -26,11 +26,13 @@ pub enum OpCode {
     Set(u8),
     SetX(u16),
     /*
-    Pops the top value off of the stack and tests it for truth. If it is
-    false, then it gets the jump point from the table at the specified
-    location and moves the program counter to that point.
+    Jumps the to the jump point at the specified index in the jump table.
+    Also has a bool, which, if true will pop the top value off of the
+    stack and check if it equals 'true' before jumping (if false, it
+    won't jump).
     */
-    IfElseJump(u16)
+    Jump(bool, u16),
+    Blank,
 }
 
 pub struct Chunk {

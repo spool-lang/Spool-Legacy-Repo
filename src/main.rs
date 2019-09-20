@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use crate::runtime::VM;
 use crate::opcode::OpCode::*;
 use crate::instance::{Instance, Instance::*};
+use std::intrinsics::transmute;
 
 mod runtime;
 mod opcode;
@@ -20,25 +21,18 @@ fn main() {
 
     &mut vm.register.insert(0, Bool(true));
     &mut vm.register.insert(1, Int16(2));
-    &mut vm.register.insert(2, Int16(1));
+    &mut vm.register.insert(2, Int16(4));
 
-    &mut vm.jump_table.insert(0, 0);
+    &mut vm.jump_table.insert(0, 4);
+    &mut vm.jump_table.insert(1, 5);
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(LogicNegate);
-    &mut vm.chunk.write(Set(0));
+    &mut vm.chunk.write(Jump(true, 0));
     &mut vm.chunk.write(Get(1));
+    &mut vm.chunk.write(Jump(false, 1));
     &mut vm.chunk.write(Get(2));
-    &mut vm.chunk.write(Multiply);
-    &mut vm.chunk.write(Get(1));
-    &mut vm.chunk.write(Multiply);
-    &mut vm.chunk.write(Get(1));
-    &mut vm.chunk.write(Multiply);
-    &mut vm.chunk.write(Set(2));
-    &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(IfElseJump(0));
-    &mut vm.chunk.write(Get(2));
+    &mut vm.chunk.write(Blank);
 
     println!("Running the program!");
     vm = vm.run();

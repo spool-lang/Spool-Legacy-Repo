@@ -62,7 +62,8 @@ impl VM {
                         OpCode::Power => self.pow_operands(),
                         OpCode::IntNegate => self.negate_operand(),
                         OpCode::LogicNegate => self.logic_negate_operand(),
-                        OpCode::IfElseJump(index) => if self.try_jump(*index) {continue},
+                        OpCode::Jump(value, index) => if !value {self.jump(*index); continue} else if self.try_jump(*index) {continue},
+                        OpCode::Blank => {},
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -180,12 +181,17 @@ impl VM {
     fn try_jump(&mut self, jump_index: u16) -> bool {
         let should_jump = !self.test_logic();
         if should_jump {
-            match self.jump_table.get(&jump_index) {
-                Some(jump_point) => {self.pc = *jump_point; return true },
-                None => panic!("Jump point does not exist")
-            }
+            self.jump(jump_index);
+            return true
         }
         return false
+    }
+
+    fn jump(&mut self, jump_index: u16) {
+        match self.jump_table.get(&jump_index) {
+            Some(jump_point) => {self.pc = *jump_point; },
+            None => panic!("Jump point does not exist")
+        }
     }
 
     fn test_logic(&mut self) -> bool {

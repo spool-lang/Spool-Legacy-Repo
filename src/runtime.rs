@@ -91,7 +91,13 @@ impl VM {
 
     fn pop_stack(&mut self, index: u16) {
         match self.stack.pop() {
-            Some(instance) => self.register.insert(index, instance),
+            Some(instance) => {
+                if index < self.chunk.register_size {
+                    self.register.insert(index + self.frame.register_offset, instance);
+                    return;
+                }
+                panic!("The chunk did not have enough space allocated in the register!")
+            },
             None => panic!("The stack was empty!")
         };
     }
@@ -279,7 +285,7 @@ Holds the current offset in the registry of the call frame as well as some
 other useful information.
 */
 pub struct CallFrame {
-    register_offset: usize,
+    register_offset: u16,
     stack_offset: usize,
     ip: usize,
 }

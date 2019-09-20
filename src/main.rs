@@ -19,6 +19,7 @@ fn main() {
 
     let mut vm = VM::new();
     &mut vm.chunk.add_const(0, Byte(3));
+    &mut vm.chunk.set_register_size(1);
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(true, 0));
@@ -37,6 +38,10 @@ fn main() {
     &mut vm.chunk.write(Get(true, 0));
     &mut vm.chunk.write(Divide);
     &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(true, 0));
+    &mut vm.chunk.write(Set(0));
+    &mut vm.chunk.write(Get(true, 0));
+    &mut vm.chunk.write(Set(1));
 
     println!("Running the program!");
     vm = vm.run();

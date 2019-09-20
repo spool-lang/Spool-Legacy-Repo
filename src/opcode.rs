@@ -56,7 +56,8 @@ pub struct Chunk {
     pub op_codes: Vec<OpCode>,
     pub is_locked: bool,
     pub jump_table: HashMap<u16, usize>,
-    pub const_table: HashMap<u16, Instance>
+    pub const_table: HashMap<u16, Instance>,
+    pub register_size: u16,
 }
 
 impl Chunk {
@@ -65,7 +66,8 @@ impl Chunk {
             op_codes: vec![],
             is_locked: false,
             jump_table: Default::default(),
-            const_table: Default::default()
+            const_table: Default::default(),
+            register_size: 0
         }
     }
 
@@ -81,6 +83,10 @@ impl Chunk {
             panic!("Attempted to write to locked chunk!")
         }
         self.const_table.insert(index, constant);
+    }
+
+    pub fn set_register_size(&mut self, size: u16) {
+        self.register_size = size
     }
 
     pub fn lock(&mut self) {

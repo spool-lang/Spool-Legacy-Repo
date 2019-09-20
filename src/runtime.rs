@@ -62,8 +62,14 @@ impl VM {
                         OpCode::Power => self.pow_operands(),
                         OpCode::IntNegate => self.negate_operand(),
                         OpCode::LogicNegate => self.logic_negate_operand(),
+                        OpCode::Less => self.compare_operand_size(false, false),
+                        OpCode::LessOrEq => self.compare_operand_size(false, true),
+                        OpCode::Greater => self.compare_operand_size(true, false),
+                        OpCode::GreaterOrEq => self.compare_operand_size(true, true),
+                        OpCode::Eq => self.equate_operands(false),
+                        OpCode::NotEq => self.equate_operands(true),
                         OpCode::Jump(value, index) => if !value {self.jump(*index); continue} else if self.try_jump(*index) {continue},
-                        OpCode::Blank => {},
+                        OpCode::Print => println!("And the value is... {:#?}", self.get_current_result()),
                         _ => panic!("Unknown OpCode!")
                     }
                 }
@@ -174,6 +180,34 @@ impl VM {
             match operand_i {
                 Bool(value) => self.stack.push(Bool(!value)),
                 _ => panic!("The operand cannot be negated!")
+            }
+        }
+    }
+
+    fn compare_operand_size(&mut self, flip_operator: bool, equal: bool) {
+        let right = self.stack.pop();
+        let left = self.stack.pop();
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => {
+                    let mut cond = left_num < right_num;
+                    if flip_operator {cond = !cond}
+                    if equal {cond = cond || (left_num == right_num)}
+                    self.stack.push(Bool(cond))
+                },
+                _ => panic!("Cannot compare the size of the operands!")
+            }
+        }
+    }
+
+    fn equate_operands(&mut self, negate: bool) {
+        let right = self.stack.pop();
+        let left = self.stack.pop();
+        if let (Some(left_i), Some(right_i)) = (left, right) {
+            match (left_i, right_i) {
+                (Int16(left_num), Int16(right_num)) => self.stack.push(Bool((left_num == right_num) && !negate)),
+                (Bool(left_val), Bool(right_val)) => self.stack.push(Bool((left_val == right_val) && !negate)),
+                _ => self.stack.push(Bool(false))
             }
         }
     }

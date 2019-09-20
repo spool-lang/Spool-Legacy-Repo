@@ -19,32 +19,42 @@ fn main() {
 
     let mut vm = VM::new();
 
-    &mut vm.register.insert(0, Bool(false));
-    &mut vm.register.insert(1, Int16(2));
-    &mut vm.register.insert(2, Int16(4));
-
-    &mut vm.jump_table.insert(0, 5);
-    &mut vm.jump_table.insert(1, 7);
+    &mut vm.register.insert(0, Int16(0));
+    &mut vm.register.insert(1, Int16(0));
+    &mut vm.register.insert(2, Int16(1));
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Jump(true, 0));
     &mut vm.chunk.write(Get(1));
-    &mut vm.chunk.write(Set(3));
-    &mut vm.chunk.write(Jump(false, 1));
+    &mut vm.chunk.write(Eq);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(0));
     &mut vm.chunk.write(Get(2));
-    &mut vm.chunk.write(Set(3));
-    &mut vm.chunk.write(Get(3));
+    &mut vm.chunk.write(Eq);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(Get(2));
+    &mut vm.chunk.write(NotEq);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(Get(2));
+    &mut vm.chunk.write(Less);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(2));
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(Less);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(2));
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(GreaterOrEq);
+    &mut vm.chunk.write(Print);
+    &mut vm.chunk.write(Get(1));
+    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(GreaterOrEq);
+    &mut vm.chunk.write(Print);
 
     println!("Running the program!");
     vm = vm.run();
-    let result = vm.get_current_result();
-    if let Int16(i) = result {
-        print!("And the result is... {}", i)
-    }
-    else if let Bool(value) = result {
-        print!("And the result is... {}", value)
-    }
 
     /*
     if args.len() >= 2 {

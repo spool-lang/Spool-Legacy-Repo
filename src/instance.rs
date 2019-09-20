@@ -3,7 +3,7 @@ use string_interner::DefaultStringInterner;
 use string_interner::Sym;
 
 // Represents instances created at runtime
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Instance {
     Bool(bool),
     Byte(i8),

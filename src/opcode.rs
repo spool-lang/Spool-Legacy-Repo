@@ -17,6 +17,16 @@ pub enum OpCode {
     IntNegate,
     LogicNegate,
     /*
+    Pops the top two values on the stack and compares them, producing either
+    `true` or `false`
+    */
+    Less,
+    Greater,
+    LessOrEq,
+    GreaterOrEq,
+    Eq,
+    NotEq,
+    /*
     Pops the top value off of the stack and pushes it to the register at
     the specified location.
     */
@@ -28,7 +38,8 @@ pub enum OpCode {
     won't jump).
     */
     Jump(bool, u16),
-    Blank,
+    // Debug only.
+    Print,
 }
 
 pub struct Chunk {

@@ -1,12 +1,14 @@
 use std::collections::HashMap;
+use crate::instance::Instance;
 
 // OpCode instructions. All instructions should be 4 bytes at the most.
 pub enum OpCode {
     /*
     Tells the VM to pull an instance from the register at the specified
-    location and move it to the stack.
+    location and move it to the stack. If the bool is true, it will
+    grab from the constants table instead.
     */
-    Get(u16),
+    Get(bool, u16),
     /*
     Tells the VM to pop the top two values off of the stack (or just one
     if unary) and perform the specified operation on them.
@@ -45,9 +47,10 @@ pub enum OpCode {
 }
 
 pub struct Chunk {
-    pub op_codes : Vec<OpCode>,
-    pub is_locked : bool,
+    pub op_codes: Vec<OpCode>,
+    pub is_locked: bool,
     pub jump_table: HashMap<u16, usize>,
+    pub const_table: HashMap<u16, Instance>
 }
 
 impl Chunk {
@@ -55,7 +58,8 @@ impl Chunk {
         Chunk {
             op_codes: vec![],
             is_locked: false,
-            jump_table: Default::default()
+            jump_table: Default::default(),
+            const_table: Default::default()
         }
     }
 
@@ -64,6 +68,13 @@ impl Chunk {
             panic!("Attempted to write to locked chunk!")
         }
         self.op_codes.push(op)
+    }
+
+    pub fn add_const(&mut self, index: u16, constant: Instance) {
+        if self.is_locked {
+            panic!("Attempted to write to locked chunk!")
+        }
+        self.const_table.insert(index, constant);
     }
 
     pub fn lock(&mut self) {

@@ -18,17 +18,12 @@ fn main() {
 
 
     let mut vm = VM::new();
-    &mut vm.register.insert(0, Int128(64));
+    &mut vm.chunk.add_const(0, Int128(64));
 
     &mut vm.chunk.jump_table.insert(0, 5);
 
     println!("Writing to the chunk!");
-    &mut vm.chunk.write(Jump(false, 0));
-    &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Get(0));
-    &mut vm.chunk.write(Add);
-    &mut vm.chunk.write(Set(0));
-    &mut vm.chunk.write(Get(0));
+    &mut vm.chunk.write(Get(true, 0));
     &mut vm.chunk.write(Print);
 
     println!("Running the program!");

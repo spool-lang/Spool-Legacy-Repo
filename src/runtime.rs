@@ -51,7 +51,7 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
-                        OpCode::Get(index) => self.push_stack(*index),
+                        OpCode::Get(get_const, index) => self.push_stack(*index, *get_const),
                         OpCode::Set(index) => self.pop_stack(*index),
                         OpCode::Add => self.add_operands(),
                         OpCode::Subtract => self.subtract_operands(),
@@ -79,8 +79,8 @@ impl VM {
         return self
     }
 
-    fn push_stack(&mut self, index : u16) {
-        let instance = self.register.get(&index);
+    fn push_stack(&mut self, index: u16, get_const: bool) {
+        let instance = if get_const {self.chunk.const_table.get(&index)} else { self.register.get(&index) };
         match instance {
             Some(thing) => self.stack.push(thing.clone().to_owned()),
             None => {panic!("Register slot {} was empty. Aborting program", index)}

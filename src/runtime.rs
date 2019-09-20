@@ -102,9 +102,8 @@ impl VM {
 
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
-                (Int16(left_num), Int16(right_num)) => {
-                    self.stack.push(Int16(left_num + right_num))
-                }
+                (Int16(left_num), Int16(right_num)) => self.stack.push(Int16(left_num + right_num)),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(UInt16(left_num + right_num)),
                 _ => panic!("The operands cannot be added!")
             }
         }
@@ -116,9 +115,8 @@ impl VM {
 
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
-                (Int16(left_num), Int16(right_num)) => {
-                    self.stack.push(Int16(left_num - right_num))
-                }
+                (Int16(left_num), Int16(right_num)) => self.stack.push(Int16(left_num - right_num)),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(UInt16(left_num - right_num)),
                 _ => panic!("The operands cannot be added!")
             }
         }
@@ -130,9 +128,8 @@ impl VM {
 
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
-                (Int16(left_num), Int16(right_num)) => {
-                    self.stack.push(Int16(left_num * right_num))
-                }
+                (Int16(left_num), Int16(right_num)) => self.stack.push(Int16(left_num * right_num)),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(UInt16(left_num * right_num)),
                 _ => panic!("The operands cannot be added!")
             }
         }
@@ -144,9 +141,8 @@ impl VM {
 
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
-                (Int16(left_num), Int16(right_num)) => {
-                    self.stack.push(Int16(left_num / right_num))
-                }
+                (Int16(left_num), Int16(right_num)) => self.stack.push(Int16(left_num / right_num)),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(UInt16(left_num / right_num)),
                 _ => panic!("The operands cannot be added!")
             }
         }
@@ -159,6 +155,7 @@ impl VM {
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
                 (Int16(left_num), Int16(right_num)) => self.stack.push(Int16(left_num.pow(right_num.try_into().unwrap()))),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(UInt16(left_num.pow(right_num.try_into().unwrap()))),
                 _ => panic!("The operands cannot be added!")
             }
         }
@@ -195,6 +192,12 @@ impl VM {
                     if equal {cond = cond || (left_num == right_num)}
                     self.stack.push(Bool(cond))
                 },
+                (UInt16(left_num), UInt16(right_num)) => {
+                    let mut cond = left_num < right_num;
+                    if flip_operator {cond = !cond}
+                    if equal {cond = cond || (left_num == right_num)}
+                    self.stack.push(Bool(cond))
+                },
                 _ => panic!("Cannot compare the size of the operands!")
             }
         }
@@ -206,6 +209,7 @@ impl VM {
         if let (Some(left_i), Some(right_i)) = (left, right) {
             match (left_i, right_i) {
                 (Int16(left_num), Int16(right_num)) => self.stack.push(Bool((left_num == right_num) && !negate)),
+                (UInt16(left_num), UInt16(right_num)) => self.stack.push(Bool((left_num == right_num) && !negate)),
                 (Bool(left_val), Bool(right_val)) => self.stack.push(Bool((left_val == right_val) && !negate)),
                 _ => self.stack.push(Bool(false))
             }

@@ -2,11 +2,9 @@
 pub enum OpCode {
     /*
     Tells the VM to pull an instance from the register at the specified
-    location and move it to the stack. X variant is used when the
-    location is greater than 255.
+    location and move it to the stack.
     */
-    Get(u8),
-    GetX(u16),
+    Get(u16),
     /*
     Tells the VM to pop the top two values off of the stack (or just one
     if unary) and perform the specified operation on them.
@@ -20,11 +18,9 @@ pub enum OpCode {
     LogicNegate,
     /*
     Pops the top value off of the stack and pushes it to the register at
-    the specified location. X variant is used when the location is
-    greater than 255.
+    the specified location.
     */
-    Set(u8),
-    SetX(u16),
+    Set(u16),
     /*
     Jumps the to the jump point at the specified index in the jump table.
     Also has a bool, which, if true will pop the top value off of the

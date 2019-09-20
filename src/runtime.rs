@@ -53,8 +53,8 @@ impl VM {
             match op {
                 Some(code) => {
                     match code {
-                        OpCode::Get(index) => self.push_stack(&u16::from(*index)),
-                        OpCode::Set(index) => self.pop_stack(&u16::from(*index)),
+                        OpCode::Get(index) => self.push_stack(*index),
+                        OpCode::Set(index) => self.pop_stack(*index),
                         OpCode::Add => self.add_operands(),
                         OpCode::Subtract => self.subtract_operands(),
                         OpCode::Multiply => self.multiply_operands(),
@@ -75,17 +75,17 @@ impl VM {
         return self
     }
 
-    fn push_stack(&mut self, index : &u16) {
-        let instance = self.register.get(index);
+    fn push_stack(&mut self, index : u16) {
+        let instance = self.register.get(&index);
         match instance {
             Some(thing) => self.stack.push(thing.clone().to_owned()),
             None => {panic!("Register slot {} was empty. Aborting program", index)}
         }
     }
 
-    fn pop_stack(&mut self, index: &u16) {
+    fn pop_stack(&mut self, index: u16) {
         match self.stack.pop() {
-            Some(instance) => self.register.insert(*index, instance),
+            Some(instance) => self.register.insert(index, instance),
             None => panic!("The stack was empty!")
         };
     }

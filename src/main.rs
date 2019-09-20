@@ -19,20 +19,22 @@ fn main() {
 
     let mut vm = VM::new();
 
-    &mut vm.register.insert(0, Bool(true));
+    &mut vm.register.insert(0, Bool(false));
     &mut vm.register.insert(1, Int16(2));
     &mut vm.register.insert(2, Int16(4));
 
-    &mut vm.jump_table.insert(0, 4);
-    &mut vm.jump_table.insert(1, 5);
+    &mut vm.jump_table.insert(0, 5);
+    &mut vm.jump_table.insert(1, 7);
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(0));
     &mut vm.chunk.write(Jump(true, 0));
     &mut vm.chunk.write(Get(1));
+    &mut vm.chunk.write(Set(3));
     &mut vm.chunk.write(Jump(false, 1));
     &mut vm.chunk.write(Get(2));
-    &mut vm.chunk.write(Blank);
+    &mut vm.chunk.write(Set(3));
+    &mut vm.chunk.write(Get(3));
 
     println!("Running the program!");
     vm = vm.run();

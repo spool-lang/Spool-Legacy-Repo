@@ -7,8 +7,6 @@
     <list default="true" id="5096a2dc-e566-4bb8-a1af-9232937161dc" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/opcode.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/opcode.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/runtime.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/runtime.rs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

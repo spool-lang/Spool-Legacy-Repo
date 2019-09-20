@@ -18,7 +18,7 @@ fn main() {
 
 
     let mut vm = VM::new();
-    &mut vm.chunk.add_const(0, UInt16(3));
+    &mut vm.chunk.add_const(0, Byte(3));
 
     println!("Writing to the chunk!");
     &mut vm.chunk.write(Get(true, 0));

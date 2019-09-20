@@ -11,14 +11,16 @@ use crate::instance::{
 use std::convert::TryInto;
 
 pub struct VM {
-    class_registry : HashMap<Sym, Instance>,
+    class_registry: HashMap<Sym, Instance>,
     // Represents the current call frame.
-    pub frame : CallFrame,
-    frame_stack : Vec<CallFrame>,
-    pub chunk : Chunk,
-    chunk_size : usize,
-    pub register : HashMap<u16, Instance>,
-    pub stack: Vec<Instance>
+    pub frame: CallFrame,
+    frame_stack: Vec<CallFrame>,
+    pub chunk: Chunk,
+    chunk_size: usize,
+    pub register: HashMap<u16, Instance>,
+    pub stack: Vec<Instance>,
+    pub jump_table: HashMap<u16, usize>,
+    pub pc : usize
 }
 
 impl VM {
@@ -35,17 +37,18 @@ impl VM {
             chunk: Chunk::new(),
             chunk_size: 0,
             register: Default::default(),
-            stack: vec![]
+            stack: vec![],
+            jump_table: Default::default(),
+            pc: 0
         }
     }
 
     pub fn run(mut self) -> VM {
         self.chunk_size = self.chunk.op_codes.len();
 
-        let mut pt = 0;
         loop {
-            let op = self.chunk.get(pt);
-            println!("Position: {}", pt);
+            let op = self.chunk.get(self.pc);
+            println!("Position: {}", self.pc);
 
             match op {
                 Some(code) => {
@@ -59,12 +62,13 @@ impl VM {
                         OpCode::Power => self.pow_operands(),
                         OpCode::IntNegate => self.negate_operand(),
                         OpCode::LogicNegate => self.logic_negate_operand(),
+                        OpCode::IfElseJump(index) => if self.try_jump(*index) {continue},
                         _ => panic!("Unknown OpCode!")
                     }
                 }
                 None => break
             }
-            pt = pt + 1;
+            self.pc += 1;
         }
 
         return self
@@ -173,6 +177,28 @@ impl VM {
         }
     }
 
+    fn try_jump(&mut self, jump_index: u16) -> bool {
+        let should_jump = !self.test_logic();
+        if should_jump {
+            match self.jump_table.get(&jump_index) {
+                Some(jump_point) => {self.pc = *jump_point; return true },
+                None => panic!("Jump point does not exist")
+            }
+        }
+        return false
+    }
+
+    fn test_logic(&mut self) -> bool {
+        let cond = self.stack.pop();
+        if let Some(instance) = cond {
+            return match instance {
+                Bool(value) => value.clone(),
+                _ => panic!()
+            }
+        }
+        panic!()
+    }
+
     pub fn get_current_result(&mut self) -> Instance {
         return match self.stack.pop() {
             Some(instance) => instance,
@@ -194,6 +220,10 @@ pub struct CallFrame {
 impl CallFrame {
     pub fn current_position(&self) -> usize {
         return self.ip
+    }
+
+    pub fn advance(&mut self) {
+        self.ip += 1;
     }
 }
 

@@ -12,9 +12,6 @@ use std::convert::TryInto;
 
 pub struct VM {
     class_registry: HashMap<Sym, Instance>,
-    // Represents the current call frame.
-    pub frame: CallFrame,
-    frame_stack: Vec<CallFrame>,
     chunk_size: usize,
     pub register: HashMap<u16, Instance>,
     pub stack: Vec<Instance>,
@@ -27,12 +24,6 @@ impl VM {
     pub fn new() -> VM {
         VM {
             class_registry: Default::default(),
-            frame: CallFrame {
-                register_offset: 0,
-                stack_offset: 0,
-                ip: 0
-            },
-            frame_stack: vec![],
             chunk_size: 0,
             register: Default::default(),
             stack: vec![],
@@ -42,10 +33,11 @@ impl VM {
     }
 
     pub fn run_program(&mut self, chunk: Rc<Chunk>) {
+        let mut frame = Rc::new(CallFrame::new());
         loop {
             let op = chunk.get(self.pc);
             match op {
-                Some(code) => self.execute_instruction(code, Rc::clone(&chunk)),
+                Some(code) => self.execute_instruction(code, Rc::clone(&chunk), Rc::clone(&frame)),
                 None => return
             }
             if !self.jumped {self.pc += 1}
@@ -53,12 +45,12 @@ impl VM {
         }
     }
 
-    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>) {
+    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
         match op_code {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
             OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk),
-            OpCode::Set(index) => self.pop_stack(*index, chunk),
+            OpCode::Set(index) => self.pop_stack(*index, chunk, frame),
             OpCode::Add => self.add_operands(),
             OpCode::Subtract => self.subtract_operands(),
             OpCode::Multiply => self.multiply_operands(),
@@ -73,6 +65,7 @@ impl VM {
             OpCode::Eq => self.equate_operands(false),
             OpCode::NotEq => self.equate_operands(true),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk) {self.jumped = true},
+            OpCode::Call => self.call(),
             OpCode::Print => println!("And the value is... {:#?}", self.get_current_result()),
             _ => panic!("Unknown OpCode!")
         }
@@ -86,11 +79,11 @@ impl VM {
         }
     }
 
-    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>) {
+    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
         match self.stack.pop() {
             Some(instance) => {
                 if index < chunk.register_size {
-                    self.register.insert(index + self.frame.register_offset, instance);
+                    self.register.insert(index + frame.register_offset, instance);
                     return;
                 }
                 panic!("The chunk did not have enough space allocated in the register!")
@@ -269,6 +262,17 @@ impl VM {
         panic!()
     }
 
+    pub fn call(&mut self) {
+        let option = self.stack.pop();
+        if let Some(Func(func)) = option {
+            let chunk = Rc::clone(&func.chunk);
+            let previous_pc = self.pc;
+            self.pc = 0;
+            self.run_program(chunk);
+            self.pc = previous_pc
+        }
+    }
+
     pub fn get_current_result(&mut self) -> Instance {
         return match self.stack.pop() {
             Some(instance) => instance,
@@ -284,16 +288,14 @@ other useful information.
 pub struct CallFrame {
     register_offset: u16,
     stack_offset: usize,
-    ip: usize,
 }
 
 impl CallFrame {
-    pub fn current_position(&self) -> usize {
-        return self.ip
-    }
-
-    pub fn advance(&mut self) {
-        self.ip += 1;
+    pub fn new() -> CallFrame {
+        CallFrame {
+            register_offset: 0,
+            stack_offset: 0,
+        }
     }
 }
 

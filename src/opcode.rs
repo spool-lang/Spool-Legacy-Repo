@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use crate::instance::Instance;
 
 // OpCode instructions. All instructions should be 4 bytes at the most.
+#[derive(Debug)]
 pub enum OpCode {
     /*
     OpCodes for popping true or false onto the stack since a bool only
@@ -48,10 +49,15 @@ pub enum OpCode {
     won't jump).
     */
     Jump(bool, u16),
+    /*
+    Calls the current function on the stack.
+    */
+    Call,
     // Debug only.
     Print,
 }
 
+#[derive(Debug)]
 pub struct Chunk {
     pub op_codes: Vec<OpCode>,
     pub is_locked: bool,

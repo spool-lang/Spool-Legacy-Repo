@@ -42,6 +42,8 @@ pub enum Instance {
     //CustomInstance(Box<CustomInstance>),
     //Represents a class object.
     //Class(Box<Class>)
+    //Represents a function.
+    Func(Rc<Function>)
 }
 
 // Represents a class declared in Silicon code:
@@ -73,16 +75,17 @@ pub struct Field {
     value : Instance,
 }
 
+#[derive(Clone, Debug)]
 pub struct Function {
     arity: u8,
-    chunk: Chunk
+    pub chunk: Rc<Chunk>
 }
 
 impl Function {
-    fn get_chunk(&self, arg_count: u8) -> &Chunk {
-        if arg_count == self.arity {
-            return &self.chunk
+    pub(crate) fn new(args: u8, chunk: Chunk) -> Function {
+        Function {
+            arity: args,
+            chunk: Rc::new(chunk)
         }
-        panic!("Argument count does not match the arity!")
     }
 }

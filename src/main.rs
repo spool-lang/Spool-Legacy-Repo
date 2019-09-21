@@ -8,6 +8,8 @@ use crate::runtime::VM;
 use crate::opcode::OpCode::*;
 use crate::instance::{Instance, Instance::*};
 use std::intrinsics::transmute;
+use crate::opcode::Chunk;
+use std::rc::Rc;
 
 mod runtime;
 mod opcode;
@@ -18,33 +20,18 @@ fn main() {
 
 
     let mut vm = VM::new();
-    &mut vm.chunk.add_const(0, Byte(3));
-    &mut vm.chunk.set_register_size(1);
+    let mut chunk = Chunk::new();
+    &mut chunk.add_const(0, Byte(3));
+    &mut chunk.set_register_size(1);
 
     println!("Writing to the chunk!");
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Add);
-    &mut vm.chunk.write(Print);
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Subtract);
-    &mut vm.chunk.write(Print);
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Multiply);
-    &mut vm.chunk.write(Print);
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Divide);
-    &mut vm.chunk.write(Print);
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Set(0));
-    &mut vm.chunk.write(Get(true, 0));
-    &mut vm.chunk.write(Set(1));
+    &mut chunk.write(Get(true, 0));
+    &mut chunk.write(Get(true, 0));
+    &mut chunk.write(Add);
+    &mut chunk.write(Print);
 
     println!("Running the program!");
-    vm = vm.run();
+    vm.run_program(Rc::new(chunk));
 
     /*
     if args.len() >= 2 {

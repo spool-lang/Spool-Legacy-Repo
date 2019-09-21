@@ -15,11 +15,11 @@ pub struct VM {
     // Represents the current call frame.
     pub frame: CallFrame,
     frame_stack: Vec<CallFrame>,
-    pub chunk: Chunk,
     chunk_size: usize,
     pub register: HashMap<u16, Instance>,
     pub stack: Vec<Instance>,
-    pub pc : usize
+    pub pc : usize,
+    jumped: bool
 }
 
 impl VM {
@@ -33,66 +33,63 @@ impl VM {
                 ip: 0
             },
             frame_stack: vec![],
-            chunk: Chunk::new(),
             chunk_size: 0,
             register: Default::default(),
             stack: vec![],
-            pc: 0
+            pc: 0,
+            jumped: false,
         }
     }
 
-    pub fn run(mut self) -> VM {
-        self.chunk_size = self.chunk.op_codes.len();
-
+    pub fn run_program(&mut self, chunk: Rc<Chunk>) {
         loop {
-            let op = self.chunk.get(self.pc);
-            println!("Position: {}", self.pc);
-
+            let op = chunk.get(self.pc);
             match op {
-                Some(code) => {
-                    match code {
-                        OpCode::GetTrue => self.stack.push(Bool(true)),
-                        OpCode::GetFalse => self.stack.push(Bool(false)),
-                        OpCode::Get(get_const, index) => self.push_stack(*index, *get_const),
-                        OpCode::Set(index) => self.pop_stack(*index),
-                        OpCode::Add => self.add_operands(),
-                        OpCode::Subtract => self.subtract_operands(),
-                        OpCode::Multiply => self.multiply_operands(),
-                        OpCode::Divide => self.divide_operands(),
-                        OpCode::Power => self.pow_operands(),
-                        OpCode::IntNegate => self.negate_operand(),
-                        OpCode::LogicNegate => self.logic_negate_operand(),
-                        OpCode::Less => self.compare_operand_size(false, false),
-                        OpCode::LessOrEq => self.compare_operand_size(false, true),
-                        OpCode::Greater => self.compare_operand_size(true, false),
-                        OpCode::GreaterOrEq => self.compare_operand_size(true, true),
-                        OpCode::Eq => self.equate_operands(false),
-                        OpCode::NotEq => self.equate_operands(true),
-                        OpCode::Jump(value, index) => if !value {self.jump(*index); continue} else if self.try_jump(*index) {continue},
-                        OpCode::Print => println!("And the value is... {:#?}", self.get_current_result()),
-                        _ => panic!("Unknown OpCode!")
-                    }
-                }
-                None => break
+                Some(code) => self.execute_instruction(code, Rc::clone(&chunk)),
+                None => return
             }
-            self.pc += 1;
+            if !self.jumped {self.pc += 1}
+            self.jumped = false
         }
-
-        return self
     }
 
-    fn push_stack(&mut self, index: u16, get_const: bool) {
-        let instance = if get_const {self.chunk.const_table.get(&index)} else { self.register.get(&index) };
+    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>) {
+        match op_code {
+            OpCode::GetTrue => self.stack.push(Bool(true)),
+            OpCode::GetFalse => self.stack.push(Bool(false)),
+            OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk),
+            OpCode::Set(index) => self.pop_stack(*index, chunk),
+            OpCode::Add => self.add_operands(),
+            OpCode::Subtract => self.subtract_operands(),
+            OpCode::Multiply => self.multiply_operands(),
+            OpCode::Divide => self.divide_operands(),
+            OpCode::Power => self.pow_operands(),
+            OpCode::IntNegate => self.negate_operand(),
+            OpCode::LogicNegate => self.logic_negate_operand(),
+            OpCode::Less => self.compare_operand_size(false, false),
+            OpCode::LessOrEq => self.compare_operand_size(false, true),
+            OpCode::Greater => self.compare_operand_size(true, false),
+            OpCode::GreaterOrEq => self.compare_operand_size(true, true),
+            OpCode::Eq => self.equate_operands(false),
+            OpCode::NotEq => self.equate_operands(true),
+            OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk) {self.jumped = true},
+            OpCode::Print => println!("And the value is... {:#?}", self.get_current_result()),
+            _ => panic!("Unknown OpCode!")
+        }
+    }
+
+    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>) {
+        let instance = if get_const {chunk.const_table.get(&index)} else { self.register.get(&index) };
         match instance {
             Some(thing) => self.stack.push(thing.clone().to_owned()),
             None => {panic!("Register slot {} was empty. Aborting program", index)}
         }
     }
 
-    fn pop_stack(&mut self, index: u16) {
+    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>) {
         match self.stack.pop() {
             Some(instance) => {
-                if index < self.chunk.register_size {
+                if index < chunk.register_size {
                     self.register.insert(index + self.frame.register_offset, instance);
                     return;
                 }
@@ -245,17 +242,17 @@ impl VM {
         }
     }
 
-    fn try_jump(&mut self, jump_index: u16) -> bool {
+    fn try_jump(&mut self, jump_index: u16, chunk: Rc<Chunk>) -> bool {
         let should_jump = !self.test_logic();
         if should_jump {
-            self.jump(jump_index);
+            self.jump(jump_index, chunk);
             return true
         }
         return false
     }
 
-    fn jump(&mut self, jump_index: u16) {
-        match self.chunk.jump_table.get(&jump_index) {
+    fn jump(&mut self, jump_index: u16, chunk: Rc<Chunk>) {
+        match chunk.jump_table.get(&jump_index) {
             Some(jump_point) => {self.pc = *jump_point; },
             None => panic!("Jump point does not exist")
         }

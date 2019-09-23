@@ -53,6 +53,9 @@ pub enum OpCode {
     Calls the current function on the stack.
     */
     Call,
+    /*
+    Pops the given number of elements off of the top of the stack and puts them into an array.
+    */
     // Debug only.
     Print,
 }

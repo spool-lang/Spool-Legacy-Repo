@@ -30,8 +30,9 @@ fn main() {
     chunk.add_const(0, Func(Rc::new(func)));
     chunk.add_const(1, Byte(0));
     chunk.write(Get(true, 1));
-    chunk.write(Get(true, 0));
-    chunk.write(Call);
+    chunk.write(Get(true, 1));
+    chunk.write(Add);
+    chunk.write(Print);
 
 
     vm.run_program(Rc::new(chunk), Rc::new(CallFrame::new()));

@@ -72,7 +72,7 @@ impl VM {
     fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
         let instance = if get_const {chunk.const_table.get(&index)} else { self.register.get(&(&index + &frame.register_offset)) };
         match instance {
-            Some(thing) => self.stack.push(thing.clone().to_owned()),
+            Some(thing) => self.stack.push(thing.to_owned()),
             None => {panic!("Register slot {} was empty. Aborting program", index)}
         }
     }
@@ -285,10 +285,4 @@ impl CallFrame {
             stack_offset
         }
     }
-}
-
-pub enum ExecutionResult {
-    OK,
-    ERR,
-    END
 }

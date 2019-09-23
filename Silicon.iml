@@ -7,6 +7,9 @@
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../Silicon\examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../Silicon\tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../Silicon\benches" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

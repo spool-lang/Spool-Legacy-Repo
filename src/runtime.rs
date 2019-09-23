@@ -1,6 +1,4 @@
 use std::rc::Rc;
-use string_interner::DefaultStringInterner;
-use string_interner::Sym;
 use std::collections::HashMap;
 use std::slice::Chunks;
 use crate::opcode::{OpCode, Chunk};
@@ -11,7 +9,7 @@ use crate::instance::{
 use std::convert::TryInto;
 
 pub struct VM {
-    class_registry: HashMap<Sym, Instance>,
+    class_registry: HashMap<String, Instance>,
     chunk_size: usize,
     pub register: HashMap<u16, Instance>,
     pub stack: Vec<Instance>,

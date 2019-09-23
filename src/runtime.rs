@@ -246,7 +246,7 @@ impl VM {
             self.pc = 0;
             self.run_program(chunk, Rc::new(new_frame));
             self.stack.truncate(stack_offset);
-            self.pc = previous_pc
+            self.pc = previous_pc;
         }
     }
 

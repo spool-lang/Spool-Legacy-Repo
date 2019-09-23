@@ -30,8 +30,8 @@ impl VM {
         }
     }
 
-    pub fn run_program(&mut self, chunk: Rc<Chunk>) {
-        let mut frame = Rc::new(CallFrame::new());
+    pub fn run_program(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+        self.chunk_size = chunk.register_size as usize;
         loop {
             let op = chunk.get(self.pc);
             match op {
@@ -47,7 +47,7 @@ impl VM {
         match op_code {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
-            OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk),
+            OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk, frame),
             OpCode::Set(index) => self.pop_stack(*index, chunk, frame),
             OpCode::Add => self.add_operands(),
             OpCode::Subtract => self.subtract_operands(),
@@ -63,14 +63,14 @@ impl VM {
             OpCode::Eq => self.equate_operands(false),
             OpCode::NotEq => self.equate_operands(true),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk) {self.jumped = true},
-            OpCode::Call => self.call(),
+            OpCode::Call => self.call(frame),
             OpCode::Print => println!("And the value is... {:#?}", self.get_current_result()),
             _ => panic!("Unknown OpCode!")
         }
     }
 
-    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>) {
-        let instance = if get_const {chunk.const_table.get(&index)} else { self.register.get(&index) };
+    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+        let instance = if get_const {chunk.const_table.get(&index)} else { self.register.get(&(&index + &frame.register_offset)) };
         match instance {
             Some(thing) => self.stack.push(thing.clone().to_owned()),
             None => {panic!("Register slot {} was empty. Aborting program", index)}
@@ -260,13 +260,14 @@ impl VM {
         panic!()
     }
 
-    pub fn call(&mut self) {
+    pub fn call(&mut self, previous_frame: Rc<CallFrame>) {
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);
+            let new_frame = CallFrame::new_with_offset((self.chunk_size + previous_frame.register_offset as usize) as u16);
             let previous_pc = self.pc;
             self.pc = 0;
-            self.run_program(chunk);
+            self.run_program(chunk, Rc::new(new_frame));
             self.pc = previous_pc
         }
     }
@@ -293,6 +294,13 @@ impl CallFrame {
         CallFrame {
             register_offset: 0,
             stack_offset: 0,
+        }
+    }
+
+    pub fn new_with_offset(register_offset: u16) -> CallFrame {
+        CallFrame {
+            register_offset,
+            stack_offset: 0
         }
     }
 }

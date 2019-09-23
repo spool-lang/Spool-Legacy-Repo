@@ -11,7 +11,7 @@ use std::convert::TryInto;
 pub struct VM {
     class_registry: HashMap<String, Instance>,
     chunk_size: usize,
-    pub register: HashMap<u16, Instance>,
+    pub register: Register,
     pub stack: Vec<Instance>,
     pub pc : usize,
     jumped: bool
@@ -23,7 +23,7 @@ impl VM {
         VM {
             class_registry: Default::default(),
             chunk_size: 0,
-            register: Default::default(),
+            register: Register::new(),
             stack: vec![],
             pc: 0,
             jumped: false,
@@ -70,18 +70,19 @@ impl VM {
     }
 
     fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
-        let instance = if get_const {chunk.const_table.get(&index)} else { self.register.get(&(&index + &frame.register_offset)) };
-        match instance {
-            Some(thing) => self.stack.push(thing.to_owned()),
-            None => {panic!("Register slot {} was empty. Aborting program", index)}
-        }
+        let instance = if get_const {
+            chunk.const_table.get(index)
+        } else {
+            self.register.get((&index + &frame.register_offset))
+        };
+        self.stack.push(instance);
     }
 
     fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
         let register_offset = frame.register_offset;
         let instance = self.get_stack_top(frame.stack_offset);
         if index < chunk.register_size {
-            self.register.insert(index + register_offset, instance);
+            self.register.set(index + register_offset, instance);
             return;
         }
     }
@@ -241,11 +242,16 @@ impl VM {
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);
             let stack_offset = self.stack.len();
-            let new_frame = CallFrame::new_with_offset((self.chunk_size + previous_frame.register_offset as usize) as u16, stack_offset);
+            let register_offset = (self.chunk_size + previous_frame.register_offset as usize) as u16;
+            //println!("Register offset: {}", register_offset);
+            let new_frame = CallFrame::new_with_offset((register_offset) as u16, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
             self.run_program(chunk, Rc::new(new_frame));
             self.stack.truncate(stack_offset);
+            //println!("Register before: {:?}", self.register);
+            self.register.truncate(register_offset);
+            //println!("Register after: {:?}", self.register);
             self.pc = previous_pc;
         }
     }
@@ -283,6 +289,50 @@ impl CallFrame {
         CallFrame {
             register_offset,
             stack_offset
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Register {
+    internal: HashMap<u16, Instance>,
+    size: u16,
+}
+
+impl Register {
+    pub fn new() -> Register {
+        Register {
+            internal: Default::default(),
+            size: 0
+        }
+    }
+
+    pub fn set(&mut self, index: u16, instance: Instance) {
+        if !(self.internal.contains_key(&index)) {
+            self.size = index + 1;
+        }
+        self.internal.insert(index, instance);
+    }
+
+    pub fn get(&self, index: u16) -> Instance {
+        match self.internal.get(&index) {
+            Some(instance) => {return instance.to_owned()},
+            None => panic!("Register slot `{}` was empty.", index)
+        };
+    }
+
+    pub fn truncate(&mut self, to_size: u16) {
+        if to_size == self.size {
+            return;
+        }
+
+        let mut to_clear = self.size - 1;
+        loop {
+            self.internal.remove(&to_clear);
+            self.size -= 1;
+            if to_size == self.size {
+                return;
+            }
         }
     }
 }

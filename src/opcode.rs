@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use crate::instance::Instance;
+use crate::runtime::Register;
 
 // OpCode instructions. All instructions should be 4 bytes at the most.
 #[derive(Debug)]
@@ -65,7 +66,7 @@ pub struct Chunk {
     pub op_codes: Vec<OpCode>,
     pub is_locked: bool,
     pub jump_table: HashMap<u16, usize>,
-    pub const_table: HashMap<u16, Instance>,
+    pub const_table: Register,
     pub register_size: u16,
 }
 
@@ -75,7 +76,7 @@ impl Chunk {
             op_codes: vec![],
             is_locked: false,
             jump_table: Default::default(),
-            const_table: Default::default(),
+            const_table: Register::new(),
             register_size: 0
         }
     }
@@ -91,7 +92,7 @@ impl Chunk {
         if self.is_locked {
             panic!("Attempted to write to locked chunk!")
         }
-        self.const_table.insert(index, constant);
+        self.const_table.set(index, constant);
     }
 
     pub fn set_register_size(&mut self, size: u16) {

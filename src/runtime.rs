@@ -78,6 +78,10 @@ impl VM {
     }
 
     fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+        if self.stack.len() - frame.stack_offset <= 0 {
+            panic!("The stack was empty!")
+        }
+
         match self.stack.pop() {
             Some(instance) => {
                 if index < chunk.register_size {
@@ -264,10 +268,12 @@ impl VM {
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);
-            let new_frame = CallFrame::new_with_offset((self.chunk_size + previous_frame.register_offset as usize) as u16);
+            let stack_offset = self.stack.len();
+            let new_frame = CallFrame::new_with_offset((self.chunk_size + previous_frame.register_offset as usize) as u16, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
             self.run_program(chunk, Rc::new(new_frame));
+            self.stack.truncate(stack_offset);
             self.pc = previous_pc
         }
     }
@@ -297,10 +303,10 @@ impl CallFrame {
         }
     }
 
-    pub fn new_with_offset(register_offset: u16) -> CallFrame {
+    pub fn new_with_offset(register_offset: u16, stack_offset: usize) -> CallFrame {
         CallFrame {
             register_offset,
-            stack_offset: 0
+            stack_offset
         }
     }
 }

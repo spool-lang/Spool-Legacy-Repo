@@ -58,6 +58,11 @@ pub enum OpCode {
     Takes the top of the stack and adds it back into the register as a function argument.
     */
     Args(u8),
+    /*
+    Returns from the enclosing function. The bool indicates whether is should return the
+    top value of the stack as well.
+    */
+    Return(bool),
     // Debug only.
     Print,
 }

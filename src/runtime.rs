@@ -7,6 +7,7 @@ use crate::instance::{
     Instance::*
 };
 use std::convert::TryInto;
+use crate::runtime::InstructionResult::{ReturnVoid, Continue, ReturnInstance};
 
 pub struct VM {
     class_registry: HashMap<String, Instance>,
@@ -30,20 +31,27 @@ impl VM {
         }
     }
 
-    pub fn run_program(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+    pub fn run_program(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
         self.chunk_size = chunk.register_size as usize;
         loop {
             let op = chunk.get(self.pc);
             match op {
-                Some(code) => self.execute_instruction(code, Rc::clone(&chunk), Rc::clone(&frame)),
-                None => return
+                Some(code) => {
+                    let result = self.execute_instruction(code, Rc::clone(&chunk), Rc::clone(&frame));
+                    match result {
+                        Continue => {},
+                        ReturnVoid => return result,
+                        ReturnInstance(instance) => return ReturnInstance(instance)
+                    }
+                },
+                None => return ReturnVoid
             }
             if !self.jumped {self.pc += 1}
             self.jumped = false
         }
     }
 
-    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
         match op_code {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
@@ -65,9 +73,11 @@ impl VM {
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
             OpCode::Call => self.call(frame),
             OpCode::Args(num) => self.add_arguments(*num),
+            OpCode::Return(return_instance) => if *return_instance { return ReturnInstance(self.get_stack_top(frame.stack_offset)) } else { return ReturnVoid }
             OpCode::Print => println!("And the value is... {:#?}", self.get_stack_top(frame.stack_offset)),
             _ => panic!("Unknown OpCode!")
-        }
+        };
+        return Continue
     }
 
     fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
@@ -266,12 +276,16 @@ impl VM {
             let new_frame = CallFrame::new_with_offset((register_offset) as u16, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
-            self.run_program(chunk, Rc::new(new_frame));
+            let result = self.run_program(chunk, Rc::new(new_frame));
             self.stack.truncate(stack_offset);
             //println!("Register before: {:?}", self.register);
             self.register.truncate(register_offset);
             //println!("Register after: {:?}", self.register);
             self.pc = previous_pc;
+            match result {
+                InstructionResult::ReturnInstance(Instance) => self.stack.push(Instance),
+                _ => {}
+            }
         }
     }
 
@@ -341,7 +355,7 @@ impl Register {
     }
 
     pub fn truncate(&mut self, to_size: u16) {
-        if to_size == self.size {
+        if to_size == self.size || self.size == 0 {
             return;
         }
 
@@ -355,4 +369,10 @@ impl Register {
             }
         }
     }
+}
+
+pub enum InstructionResult{
+    Continue,
+    ReturnVoid,
+    ReturnInstance(Instance)
 }

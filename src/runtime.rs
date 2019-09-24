@@ -9,9 +9,11 @@ use crate::instance::{
 use std::convert::TryInto;
 use crate::runtime::InstructionResult::{ReturnVoid, Continue, ReturnInstance};
 use std::cell::RefCell;
+use crate::string_pool::StringPool;
 
 pub struct VM {
     class_registry: HashMap<String, Instance>,
+    pub string_pool: StringPool,
     chunk_size: usize,
     pub register: Register,
     pub stack: Vec<Instance>,
@@ -24,6 +26,7 @@ impl VM {
     pub fn new() -> VM {
         VM {
             class_registry: Default::default(),
+            string_pool: StringPool::new(),
             chunk_size: 0,
             register: Register::new(),
             stack: vec![],

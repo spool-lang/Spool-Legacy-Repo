@@ -35,7 +35,7 @@ pub enum Instance {
     //BigDecimal(),
     //Complex(),
     Char(char),
-    //Str(),
+    Str(Rc<String>),
     Array(Rc<RefCell<Vec<Instance>>>),
     //Represents a custom class instance.
     //CustomInstance(Box<CustomInstance>),

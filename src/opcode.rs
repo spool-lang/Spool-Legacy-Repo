@@ -110,7 +110,6 @@ impl Chunk {
     }
 
     pub fn get(&self, pt : usize) -> Option<&OpCode> {
-        println!("Getting an OpCode!");
         return self.op_codes.get(pt)
     }
 }

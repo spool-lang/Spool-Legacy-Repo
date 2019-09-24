@@ -27,12 +27,15 @@ fn main() {
     chunk.set_register_size(1);
     let pooled_string = vm.string_pool.pool_string("Hello, world!".to_string());
     chunk.add_const(0, Str(pooled_string));
-    chunk.add_const(1, Byte(1));
+    chunk.add_const(1, UByte(1));
+    chunk.add_const(2, Int16(127));
     chunk.write(Get(true, 0));
     chunk.write(Print);
     chunk.write(Get(true, 0));
     chunk.write(Get(true, 1));
     chunk.write(IndexGet);
+    chunk.write(Print);
+    chunk.write(Get(true, 2));
     chunk.write(Print);
 
     vm.run_program(Rc::new(chunk), Rc::new(CallFrame::new()));

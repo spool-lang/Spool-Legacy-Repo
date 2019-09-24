@@ -81,7 +81,7 @@ impl VM {
             OpCode::InitArray(size) => self.make_array(*size, frame.stack_offset),
             OpCode::IndexGet => self.index_get(frame.stack_offset),
             OpCode::IndexSet => self.index_set(frame.stack_offset),
-            OpCode::Print => println!("And the value is... {:?}", self.get_stack_top(frame.stack_offset)),
+            OpCode::Print => println!("{}", self.get_stack_top(frame.stack_offset)),
         };
         return Continue
     }

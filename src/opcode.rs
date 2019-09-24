@@ -63,6 +63,18 @@ pub enum OpCode {
     top value of the stack as well.
     */
     Return(bool),
+    /*
+    Pops the top x items off of the stack and makes them into an Instance::Array();
+    */
+    InitArray(u16),
+    /*
+    Gets pops the index then array off of the stack then gets the value from the instance
+    at the specified index.
+    */
+    IndexGet,
+    /*
+    */
+    IndexSet,
     // Debug only.
     Print,
 }

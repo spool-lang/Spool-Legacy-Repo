@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use crate::opcode::Chunk;
+use std::cell::RefCell;
 
 // Represents instances created at runtime
 #[derive(Clone, Debug)]
@@ -35,7 +36,7 @@ pub enum Instance {
     //Complex(),
     Char(char),
     //Str(),
-    Array(Vec<Instance>),
+    Array(Rc<RefCell<Vec<Instance>>>),
     //Represents a custom class instance.
     //CustomInstance(Box<CustomInstance>),
     //Represents a class object.

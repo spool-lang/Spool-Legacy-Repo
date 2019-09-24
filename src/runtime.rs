@@ -8,6 +8,7 @@ use crate::instance::{
 };
 use std::convert::TryInto;
 use crate::runtime::InstructionResult::{ReturnVoid, Continue, ReturnInstance};
+use std::cell::RefCell;
 
 pub struct VM {
     class_registry: HashMap<String, Instance>,
@@ -74,7 +75,10 @@ impl VM {
             OpCode::Call => self.call(frame),
             OpCode::Args(num) => self.add_arguments(*num),
             OpCode::Return(return_instance) => if *return_instance { return ReturnInstance(self.get_stack_top(frame.stack_offset)) } else { return ReturnVoid }
-            OpCode::Print => println!("And the value is... {:#?}", self.get_stack_top(frame.stack_offset)),
+            OpCode::InitArray(size) => self.make_array(*size, frame.stack_offset),
+            OpCode::IndexGet => self.index_get(frame.stack_offset),
+            OpCode::IndexSet => self.index_set(frame.stack_offset),
+            OpCode::Print => println!("And the value is... {:?}", self.get_stack_top(frame.stack_offset)),
         };
         return Continue
     }
@@ -284,6 +288,61 @@ impl VM {
                 InstructionResult::ReturnInstance(instance) => self.stack.push(instance),
                 _ => {}
             }
+        }
+    }
+
+    pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
+        let mut array : Vec<Instance> = vec![];
+        for i in 0..array_size {
+            let next = self.get_stack_top(stack_offset);
+            array.push(next)
+        }
+        self.stack.push(Array(Rc::new(RefCell::new(array))));
+        println!("Stack after array creation: {:?}", self.stack)
+    }
+
+    pub fn index_get(&mut self, stack_offset: usize) {
+        let index = self.get_stack_top(stack_offset);
+        let array = self.get_stack_top(stack_offset);
+
+        match array {
+            Array(vec) => {
+                let mut index_num = 0;
+                match index {
+                    Byte(num) => index_num = num as usize,
+                    UByte(num) => index_num = num as usize,
+                    Int16(num) => index_num = num as usize,
+                    UInt16(num) => index_num = num as usize,
+                    _ => panic!("Invalid array index.")
+                };
+                match vec.borrow().get(index_num) {
+                    Some(instance) => self.stack.push(instance.to_owned()),
+                    None => panic!("No instance found at the given index.")
+                }
+            },
+            _ => panic!("The instance is not indexable!")
+        }
+    }
+
+    pub fn index_set(&mut self, stack_offset: usize) {
+        let item = self.get_stack_top(stack_offset);
+        let index = self.get_stack_top(stack_offset);
+        let array = self.get_stack_top(stack_offset);
+
+        match array {
+            Array(mut vec) => {
+                let mut index_num = 0;
+                match index {
+                    Byte(num) => index_num = num as usize,
+                    UByte(num) => index_num = num as usize,
+                    Int16(num) => index_num = num as usize,
+                    UInt16(num) => index_num = num as usize,
+                    _ => panic!("Invalid array index.")
+                };
+                vec.borrow_mut().remove(index_num);
+                vec.borrow_mut().insert(index_num, item)
+            },
+            _ => panic!("The instance is not indexable!")
         }
     }
 

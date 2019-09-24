@@ -22,23 +22,20 @@ fn main() {
     let mut vm = VM::new();
 
     let mut func_chunk = Chunk::new();
-    func_chunk.add_const(1, Byte(1));
     func_chunk.set_register_size(1);
-    func_chunk.write(Get(true, 1));
-    func_chunk.write(Set(0));
+    func_chunk.write(Get(false, 0));
+    func_chunk.write(Print);
 
 
     let func = Function::new(0, func_chunk);
 
     let mut chunk = Chunk::new();
-    chunk.set_register_size(2);
+    chunk.set_register_size(1);
     chunk.add_const(0, Func(Rc::new(func)));
     chunk.add_const(1, Byte(0));
-    chunk.write(Get(true, 1));
-    chunk.write(Set(0));
-    chunk.write(Get(true, 1));
-    chunk.write(Set(1));
     chunk.write(Get(true, 0));
+    chunk.write(Get(true, 1));
+    chunk.write(Args(1));
     chunk.write(Call);
 
 

@@ -64,6 +64,7 @@ impl VM {
             OpCode::NotEq => self.equate_operands(true, frame.stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
             OpCode::Call => self.call(frame),
+            OpCode::Args(num) => self.add_arguments(*num),
             OpCode::Print => println!("And the value is... {:#?}", self.get_stack_top(frame.stack_offset)),
             _ => panic!("Unknown OpCode!")
         }
@@ -237,6 +238,24 @@ impl VM {
         panic!()
     }
 
+    pub fn add_arguments(&mut self, count: u8) {
+        if count == 0 {
+            return;
+        }
+
+        //println!("Register before: {:?}", self.register);
+        //println!("Stack before: {:?}", self.stack);
+        let mut args: Vec<Instance> = self.stack.drain(self.stack.len() - count as usize..).collect();
+        let offset = self.chunk_size;
+        let mut arg_index = 0;
+        for index in 0..count {
+            let next_arg = args.pop();
+            self.register.set((index + offset as u8) as u16, next_arg.unwrap())
+        }
+        //println!("Register after: {:?}", self.register);
+        //println!("Stack after: {:?}", self.stack);
+    }
+
     pub fn call(&mut self, previous_frame: Rc<CallFrame>) {
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
@@ -330,6 +349,7 @@ impl Register {
         loop {
             self.internal.remove(&to_clear);
             self.size -= 1;
+            to_clear = to_clear - 1;
             if to_size == self.size {
                 return;
             }

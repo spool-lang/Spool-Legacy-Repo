@@ -55,8 +55,9 @@ pub enum OpCode {
     */
     Call,
     /*
-    Pops the given number of elements off of the top of the stack and puts them into an array.
+    Takes the top of the stack and adds it back into the register as a function argument.
     */
+    Args(u8),
     // Debug only.
     Print,
 }

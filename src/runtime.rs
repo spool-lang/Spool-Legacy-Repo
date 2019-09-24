@@ -297,6 +297,7 @@ impl VM {
             let next = self.get_stack_top(stack_offset);
             array.push(next)
         }
+        array.reverse();
         self.stack.push(Array(Rc::new(RefCell::new(array))));
         println!("Stack after array creation: {:?}", self.stack)
     }

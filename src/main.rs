@@ -10,14 +10,16 @@ use crate::instance::{Instance, Instance::*, Function};
 use std::intrinsics::transmute;
 use crate::opcode::Chunk;
 use std::rc::Rc;
+use std::collections::HashSet;
+use crate::string_pool::StringPool;
 
 mod runtime;
 mod opcode;
 mod instance;
+mod string_pool;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-
 
     let mut vm = VM::new();
 
@@ -33,7 +35,7 @@ fn main() {
     chunk.set_register_size(1);
     chunk.add_const(0, Func(Rc::new(func)));
     chunk.add_const(1,Int16(50));
-    chunk.add_const(2,Int16(5));
+    chunk.add_const(2,Int16(2));
     chunk.add_const(3,Int16(23));
     chunk.add_const(4, Byte(3));
     chunk.write(Get(true, 1));

@@ -296,14 +296,8 @@ impl VM {
     }
 
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
-        let mut array : Vec<Instance> = vec![];
-        for i in 0..array_size {
-            let next = self.get_stack_top(stack_offset);
-            array.push(next)
-        }
-        array.reverse();
+        let mut array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);
         self.stack.push(Array(Rc::new(RefCell::new(array))));
-        println!("Stack after array creation: {:?}", self.stack)
     }
 
     pub fn index_get(&mut self, stack_offset: usize) {
@@ -392,6 +386,16 @@ impl VM {
             Some(instance) => instance,
             None => panic!("The stack was empty!")
         }
+    }
+
+    pub fn split_stack(&mut self, amount: usize, stack_offset: usize) -> Vec<Instance> {
+        let mut vec : Vec<Instance> = vec![];
+        for i in 0..amount {
+            let next = self.get_stack_top(stack_offset);
+            vec.push(next)
+        }
+        vec.reverse();
+        return vec
     }
 }
 

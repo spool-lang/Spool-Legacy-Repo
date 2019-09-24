@@ -39,6 +39,10 @@ pub enum OpCode {
     Eq,
     NotEq,
     /*
+    Concatenates the right operand to the left one.
+    */
+    Concat,
+    /*
     Pops the top value off of the stack and pushes it to the register at
     the specified location.
     */

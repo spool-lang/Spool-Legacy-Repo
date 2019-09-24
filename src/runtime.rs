@@ -74,6 +74,7 @@ impl VM {
             OpCode::GreaterOrEq => self.compare_operand_size(true, true, frame.stack_offset),
             OpCode::Eq => self.equate_operands(false, frame.stack_offset),
             OpCode::NotEq => self.equate_operands(true, frame.stack_offset),
+            OpCode::Concat => self.concat(frame.stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
             OpCode::Call => self.call(frame),
             OpCode::Args(num) => self.add_arguments(*num),
@@ -361,6 +362,24 @@ impl VM {
                 vec.borrow_mut().insert(index_num, item)
             },
             _ => panic!("The instance is not indexable!")
+        }
+    }
+
+    pub fn concat(&mut self, stack_offset: usize) {
+        let right = self.get_stack_top(stack_offset);
+        let left = self.get_stack_top(stack_offset);
+
+        match left {
+            Str(string) => {
+                let new_string = match right {
+                    Str(s) => format!("{}{}", string, s),
+                    Char(c) => format!("{}{}", string, c),
+                    _ => format!("{}{}", string, right)
+                };
+                let pooled_string = self.string_pool.pool_string(new_string);
+                self.stack.push(Str(pooled_string))
+            }
+            _ => panic!("Cannot concat operands!")
         }
     }
 

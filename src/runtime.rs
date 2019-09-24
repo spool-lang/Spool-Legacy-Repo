@@ -75,7 +75,6 @@ impl VM {
             OpCode::Args(num) => self.add_arguments(*num),
             OpCode::Return(return_instance) => if *return_instance { return ReturnInstance(self.get_stack_top(frame.stack_offset)) } else { return ReturnVoid }
             OpCode::Print => println!("And the value is... {:#?}", self.get_stack_top(frame.stack_offset)),
-            _ => panic!("Unknown OpCode!")
         };
         return Continue
     }
@@ -257,7 +256,6 @@ impl VM {
         //println!("Stack before: {:?}", self.stack);
         let mut args: Vec<Instance> = self.stack.drain(self.stack.len() - count as usize..).collect();
         let offset = self.chunk_size;
-        let mut arg_index = 0;
         for index in 0..count {
             let next_arg = args.pop();
             self.register.set((index + offset as u8) as u16, next_arg.unwrap())
@@ -283,7 +281,7 @@ impl VM {
             //println!("Register after: {:?}", self.register);
             self.pc = previous_pc;
             match result {
-                InstructionResult::ReturnInstance(Instance) => self.stack.push(Instance),
+                InstructionResult::ReturnInstance(instance) => self.stack.push(instance),
                 _ => {}
             }
         }

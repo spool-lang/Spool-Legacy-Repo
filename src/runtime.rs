@@ -307,9 +307,9 @@ impl VM {
 
     pub fn index_get(&mut self, stack_offset: usize) {
         let index = self.get_stack_top(stack_offset);
-        let array = self.get_stack_top(stack_offset);
+        let indexable = self.get_stack_top(stack_offset);
 
-        match array {
+        match indexable {
             Array(vec) => {
                 let mut index_num = 0;
                 match index {
@@ -324,6 +324,20 @@ impl VM {
                     None => panic!("No instance found at the given index.")
                 }
             },
+            Str(string) => {
+                let mut index_num = 0;
+                match index {
+                    Byte(num) => index_num = num as usize,
+                    UByte(num) => index_num = num as usize,
+                    Int16(num) => index_num = num as usize,
+                    UInt16(num) => index_num = num as usize,
+                    _ => panic!("Invalid string index.")
+                };
+                match string.chars().nth(index_num) {
+                    Some(c) => self.stack.push(Char(c)),
+                    None => panic!("Invalid string index.")
+                }
+            }
             _ => panic!("The instance is not indexable!")
         }
     }

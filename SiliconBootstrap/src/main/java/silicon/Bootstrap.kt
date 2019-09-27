@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
         exitProcess(-1)
     }
 
-    val lexer = Lexer("+-*/^")
+    val lexer = Lexer("({[++=--=**=//=^^====.<<=>>=!!=]})")
     val tokens: List<Token>
 
     try {

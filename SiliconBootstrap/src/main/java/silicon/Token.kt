@@ -8,5 +8,30 @@ enum class TokenType {
     MINUS,
     MULTIPLY,
     DIVIDE,
-    POW
+    POW,
+    DOT,
+    // Logic Operators
+    LESS,
+    GREATER,
+    LESS_EQUAL,
+    GREATER_EQUAL,
+    NOT,
+    NOT_EQUAL,
+    EQUAL,
+    //Assignment
+    ASSIGN,
+    PLUS_ASSIGN,
+    MINUS_ASSIGN,
+    MULTIPLY_ASSIGN,
+    DIVIDE_ASSIGN,
+    POW_ASSIGN,
+    //Brackets
+    SQUARE_LEFT,
+    SQUARE_RIGHT,
+    ANGLE_LEFT,
+    ANGLE_RIGHT,
+    BRACE_LEFT,
+    BRACE_RIGHT,
+    PAREN_LEFT,
+    PAREN_RIGHT
 }

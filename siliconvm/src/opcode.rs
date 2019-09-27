@@ -55,9 +55,10 @@ pub enum OpCode {
     */
     Jump(bool, u16),
     /*
-    Calls the current function on the stack.
+    Calls the current function on the stack. If the u16 is greater than 0, that many
+    arguments will also be supplied to the function.
     */
-    Call,
+    Call(u16),
     /*
     Takes the top of the stack and adds it back into the register as a function argument.
     */

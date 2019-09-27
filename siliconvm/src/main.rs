@@ -1,8 +1,8 @@
 use std::env;
 use std::process;
 
-use Silicon;
-use Silicon::Config;
+use silicon;
+use silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::{VM, CallFrame};
 use crate::opcode::OpCode::*;
@@ -30,16 +30,18 @@ fn main() {
     chunk.add_const(0, Str(pooled_string));
     chunk.add_const(1, Char(' '));
     chunk.add_const(2, Str(pooled_string_two));
-    chunk.add_const(3, Byte(42));
+    chunk.add_const(3, Byte(25));
     chunk.write(Get(true, 0));
     chunk.write(Get(true, 1));
     chunk.write(Concat);
     chunk.write(Get(true, 2));
     chunk.write(Concat);
-    chunk.write(Get(true, 1));
-    chunk.write(Concat);
+    chunk.write(Set(0));
+    chunk.write(Get(false, 0));
+    chunk.write(Print);
+    chunk.write(Get(false, 0));
     chunk.write(Get(true, 3));
-    chunk.write(Concat);
+    chunk.write(IndexGet);
     chunk.write(Print);
 
     vm.run_program(Rc::new(chunk), Rc::new(CallFrame::new()));

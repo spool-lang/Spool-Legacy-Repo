@@ -76,7 +76,7 @@ impl VM {
             OpCode::NotEq => self.equate_operands(true, frame.stack_offset),
             OpCode::Concat => self.concat(frame.stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
-            OpCode::Call => self.call(frame),
+            OpCode::Call(args) => self.call(*args, frame),
             OpCode::Args(num) => self.add_arguments(*num),
             OpCode::Return(return_instance) => if *return_instance { return ReturnInstance(self.get_stack_top(frame.stack_offset)) } else { return ReturnVoid }
             OpCode::InitArray(size) => self.make_array(*size, frame.stack_offset),
@@ -272,7 +272,18 @@ impl VM {
         //println!("Stack after: {:?}", self.stack);
     }
 
-    pub fn call(&mut self, previous_frame: Rc<CallFrame>) {
+    pub fn call(&mut self, args: u16, previous_frame: Rc<CallFrame>) {
+        /*
+        let func_op = self.get_stack_top(previous_frame.stack_offset);
+        let args = self.split_stack(args as usize, previous_frame.stack_offset);
+        if let Func(func) = func_op {
+            let rg_offset = self.chunk_size;
+            for index in 0..args {
+
+            }
+        }
+        */
+
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);

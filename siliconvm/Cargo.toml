@@ -1,5 +1,5 @@
 [package]
-name = "Silicon"
+name = "silicon"
 version = "0.1.0"
 authors = ["RedstoneParadox <spinjitzu00@gmail.com>"]
 edition = "2018"

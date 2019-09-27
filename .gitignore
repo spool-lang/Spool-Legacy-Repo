@@ -1,9 +1,8 @@
-/target
 **/*.rs.bk
-.idea
-.idea/misc.xml
-.idea/workspace.xml
-Cargo.lock
-Silicon.iml
-.idea/misc.xml
-.idea/workspace.xml
+siliconvm/.idea
+siliconvm/.idea/misc.xml
+siliconvm/.idea/workspace.xml
+siliconvm/Silicon.iml
+siliconvm/.idea/misc.xml
+siliconvm/.idea/workspace.xml
+siliconvm/target/

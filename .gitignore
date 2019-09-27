@@ -9,3 +9,4 @@ siliconvm/target/
 SiliconBootstrap/.gradle/
 SiliconBootstrap/gradle/
 SiliconBootstrap/.idea/
+SiliconBootstrap/build/

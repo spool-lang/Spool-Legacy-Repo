@@ -6,3 +6,6 @@ siliconvm/Silicon.iml
 siliconvm/.idea/misc.xml
 siliconvm/.idea/workspace.xml
 siliconvm/target/
+SiliconBootstrap/.gradle/
+SiliconBootstrap/gradle/
+SiliconBootstrap/.idea/

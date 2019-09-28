@@ -3,10 +3,10 @@ package silicon
 import java.lang.Exception
 
 class Lexer(private val source: String) {
-    var tokens: ArrayList<Token> = arrayListOf()
-    var index: Int = 0
-    var row: Long = 0
-    var column: Long = 0
+    private var tokens: ArrayList<Token> = arrayListOf()
+    private var index: Int = 0
+    private var row: Long = 0
+    private var column: Long = 0
 
     @Throws(Exception::class)
     fun lex(): List<Token> {

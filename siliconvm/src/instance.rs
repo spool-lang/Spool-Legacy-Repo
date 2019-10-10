@@ -123,8 +123,8 @@ pub struct Field {
 
 #[derive(Clone, Debug)]
 pub struct Function {
-    arity: u8,
-    pub chunk: Rc<Chunk>
+    pub(crate) arity: u8,
+    pub(crate) chunk: Rc<Chunk>
 }
 
 impl Function {

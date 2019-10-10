@@ -35,8 +35,14 @@ impl VM {
         }
     }
 
-    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) -> InstructionResult {
+    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>, args: Vec<Instance>) -> InstructionResult {
         self.chunk_size = chunk.register_size as usize;
+        let register_offset = frame.borrow().register_access_offset;
+        let i = 0;
+        for instance in args {
+            self.register.set(register_offset + i, instance)
+        }
+
         loop {
             let op = chunk.get(self.pc);
             match op {
@@ -76,8 +82,7 @@ impl VM {
             OpCode::NotEq => self.equate_operands(true, frame.borrow().stack_offset),
             OpCode::Concat => self.concat(frame.borrow().stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.borrow().stack_offset) {self.jumped = true},
-            OpCode::Call(args) => self.call(*args, frame),
-            OpCode::Args(num) => self.add_arguments(*num),
+            OpCode::Call => self.call_func(frame),
             OpCode::Return(return_instance) => if *return_instance { return ReturnWith(self.get_stack_top(frame.borrow().stack_offset)) } else { return Return }
             OpCode::InitArray(size) => self.make_array(*size, frame.borrow().stack_offset),
             OpCode::IndexGet => self.index_get(frame.borrow().stack_offset),
@@ -257,44 +262,29 @@ impl VM {
         panic!()
     }
 
-    pub fn add_arguments(&mut self, count: u8) {
-        if count == 0 {
-            return;
-        }
-
-        //println!("Register before: {:?}", self.register);
-        //println!("Stack before: {:?}", self.stack);
-        let mut args: Vec<Instance> = self.stack.drain(self.stack.len() - count as usize..).collect();
-        let offset = self.chunk_size;
-        for index in 0..count {
-            let next_arg = args.pop();
-            self.register.set((index + offset as u8) as u16, next_arg.unwrap())
-        }
-        //println!("Register after: {:?}", self.register);
-        //println!("Stack after: {:?}", self.stack);
-    }
-
-    pub fn call(&mut self, args: u16, previous_frame: Rc<RefCell<CallFrame>>) {
-        let option = self.stack.pop();
-        if let Some(Func(func)) = option {
+    pub fn call_func(&mut self, previous_frame: Rc<RefCell<CallFrame>>) {
+        let stack_offset = previous_frame.borrow().stack_offset;
+        if let Func(func) = self.get_stack_top(stack_offset) {
             let chunk = Rc::clone(&func.chunk);
-            let stack_offset = self.stack.len();
-            let register_offset = (self.chunk_size + previous_frame.borrow().register_access_offset as usize) as u16;
-            //println!("Register offset: {}", register_offset);
-            let new_frame = CallFrame::new_with_offset((register_offset) as u16, (register_offset) as u16, stack_offset);
+            let register_offset = self.register.size;
+            let new_frame = CallFrame::new_with_offset(register_offset, register_offset, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
-            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)));
-            self.stack.truncate(stack_offset);
-            //println!("Register before: {:?}", self.register);
+            let mut args_vec: Vec<Instance> = self.split_stack(func.arity as usize, previous_frame.borrow().stack_offset);
+            let stack_offset = self.stack.len();
+
+            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)), args_vec);
             self.register.truncate(register_offset);
-            //println!("Register after: {:?}", self.register);
+            self.stack.truncate(stack_offset);
             self.pc = previous_pc;
+
             match result {
                 InstructionResult::ReturnWith(instance) => self.stack.push(instance),
                 _ => {}
             }
+            return;
         }
+        panic!("Attempted to call non-function!")
     }
 
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
@@ -488,6 +478,9 @@ impl Register {
         loop {
             self.internal.remove(&to_clear);
             self.size -= 1;
+            if self.size == 0 {
+                return;
+            }
             to_clear = to_clear - 1;
             if to_size == self.size {
                 return;

@@ -23,29 +23,22 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let mut vm = VM::new();
-    let pooled_str1 = vm.string_pool.pool_string("Hello!".to_string());
-    let pooled_str2 = vm.string_pool.pool_string("How are you?".to_string());
+
+    let pooled_string = vm.string_pool.pool_string("Hello, world!".to_string());
+
+    let mut func_chunk = Chunk::new();
+    func_chunk.write(Get(false, 0));
+    func_chunk.write(Print);
+    let func = Function::new(1, func_chunk);
 
     let mut chunk = Chunk::new();
-    chunk.set_register_size(2);
-    chunk.add_const(0, Str(pooled_str1));
-    chunk.add_const(1, Str(pooled_str2));
-    chunk.write(Get(true, 0));
-    chunk.write(Set(0));
-    chunk.write(EnterScope(1));
+    chunk.add_const(0, Func(Rc::new(func)));
+    chunk.add_const(1, Str(pooled_string));
     chunk.write(Get(true, 1));
-    chunk.write(Set(0));
-    chunk.write(Get(false, 0));
-    chunk.write(Print);
-    chunk.write(Get(false, 1));
-    chunk.write(Print);
-    chunk.write(ExitScope);
-    chunk.write(Get(false, 0));
-    chunk.write(Print);
-    // Uncommenting this line will crash the program.
-    //chunk.write(Get(false, 1));
+    chunk.write(Get(true, 0));
+    chunk.write(Call(1));
 
-    vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())));
+    vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![]);
 
     /*
     if args.len() >= 2 {

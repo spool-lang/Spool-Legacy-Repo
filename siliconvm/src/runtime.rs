@@ -28,14 +28,14 @@ impl VM {
             class_registry: Default::default(),
             string_pool: StringPool::new(),
             chunk_size: 0,
-            register: Register::new(),
+            register: Register::new(true),
             stack: vec![],
             pc: 0,
             jumped: false,
         }
     }
 
-    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
+    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) -> InstructionResult {
         self.chunk_size = chunk.register_size as usize;
         loop {
             let op = chunk.get(self.pc);
@@ -55,52 +55,52 @@ impl VM {
         }
     }
 
-    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
+    pub fn execute_instruction(&mut self, op_code: &OpCode, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) -> InstructionResult {
         match op_code {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
             OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk, frame),
             OpCode::Set(index) => self.pop_stack(*index, chunk, frame),
-            OpCode::Add => self.add_operands(frame.stack_offset),
-            OpCode::Subtract => self.subtract_operands(frame.stack_offset),
-            OpCode::Multiply => self.multiply_operands(frame.stack_offset),
-            OpCode::Divide => self.divide_operands(frame.stack_offset),
-            OpCode::Power => self.pow_operands(frame.stack_offset),
-            OpCode::IntNegate => self.negate_operand(frame.stack_offset),
-            OpCode::LogicNegate => self.logic_negate_operand(frame.stack_offset),
-            OpCode::Less => self.compare_operand_size(false, false, frame.stack_offset),
-            OpCode::LessOrEq => self.compare_operand_size(false, true, frame.stack_offset),
-            OpCode::Greater => self.compare_operand_size(true, false, frame.stack_offset),
-            OpCode::GreaterOrEq => self.compare_operand_size(true, true, frame.stack_offset),
-            OpCode::Eq => self.equate_operands(false, frame.stack_offset),
-            OpCode::NotEq => self.equate_operands(true, frame.stack_offset),
-            OpCode::Concat => self.concat(frame.stack_offset),
-            OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
+            OpCode::Add => self.add_operands(frame.borrow().stack_offset),
+            OpCode::Subtract => self.subtract_operands(frame.borrow().stack_offset),
+            OpCode::Multiply => self.multiply_operands(frame.borrow().stack_offset),
+            OpCode::Divide => self.divide_operands(frame.borrow().stack_offset),
+            OpCode::Power => self.pow_operands(frame.borrow().stack_offset),
+            OpCode::IntNegate => self.negate_operand(frame.borrow().stack_offset),
+            OpCode::LogicNegate => self.logic_negate_operand(frame.borrow().stack_offset),
+            OpCode::Less => self.compare_operand_size(false, false, frame.borrow().stack_offset),
+            OpCode::LessOrEq => self.compare_operand_size(false, true, frame.borrow().stack_offset),
+            OpCode::Greater => self.compare_operand_size(true, false, frame.borrow().stack_offset),
+            OpCode::GreaterOrEq => self.compare_operand_size(true, true, frame.borrow().stack_offset),
+            OpCode::Eq => self.equate_operands(false, frame.borrow().stack_offset),
+            OpCode::NotEq => self.equate_operands(true, frame.borrow().stack_offset),
+            OpCode::Concat => self.concat(frame.borrow().stack_offset),
+            OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.borrow().stack_offset) {self.jumped = true},
             OpCode::Call(args) => self.call(*args, frame),
             OpCode::Args(num) => self.add_arguments(*num),
-            OpCode::Return(return_instance) => if *return_instance { return ReturnWith(self.get_stack_top(frame.stack_offset)) } else { return Return }
-            OpCode::InitArray(size) => self.make_array(*size, frame.stack_offset),
-            OpCode::IndexGet => self.index_get(frame.stack_offset),
-            OpCode::IndexSet => self.index_set(frame.stack_offset),
-            OpCode::EnterScope(size) => {},
-            OpCode::ExitScope => {},
-            OpCode::Print => println!("{}", self.get_stack_top(frame.stack_offset)),
+            OpCode::Return(return_instance) => if *return_instance { return ReturnWith(self.get_stack_top(frame.borrow().stack_offset)) } else { return Return }
+            OpCode::InitArray(size) => self.make_array(*size, frame.borrow().stack_offset),
+            OpCode::IndexGet => self.index_get(frame.borrow().stack_offset),
+            OpCode::IndexSet => self.index_set(frame.borrow().stack_offset),
+            OpCode::EnterScope(size) => self.enter_scope(*size, frame),
+            OpCode::ExitScope => self.exit_scope(frame),
+            OpCode::Print => println!("{}", self.get_stack_top(frame.borrow().stack_offset)),
         };
         return Continue
     }
 
-    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
+    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
         let instance = if get_const {
-            chunk.const_table.get(index)
+            chunk.get_const(index)
         } else {
-            self.register.get((&index + &frame.register_access_offset))
+            self.register.get((&index + &frame.borrow().register_access_offset))
         };
         self.stack.push(instance);
     }
 
-    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
-        let register_offset = frame.register_access_offset;
-        let instance = self.get_stack_top(frame.stack_offset);
+    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
+        let register_offset = frame.borrow().register_declare_offset;
+        let instance = self.get_stack_top(frame.borrow().stack_offset);
         if index < chunk.register_size {
             self.register.set(index + register_offset, instance);
             return;
@@ -274,17 +274,17 @@ impl VM {
         //println!("Stack after: {:?}", self.stack);
     }
 
-    pub fn call(&mut self, args: u16, previous_frame: Rc<CallFrame>) {
+    pub fn call(&mut self, args: u16, previous_frame: Rc<RefCell<CallFrame>>) {
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);
             let stack_offset = self.stack.len();
-            let register_offset = (self.chunk_size + previous_frame.register_access_offset as usize) as u16;
+            let register_offset = (self.chunk_size + previous_frame.borrow().register_access_offset as usize) as u16;
             //println!("Register offset: {}", register_offset);
             let new_frame = CallFrame::new_with_offset((register_offset) as u16, (register_offset) as u16, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
-            let result = self.execute_chunk(chunk, Rc::new(new_frame));
+            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)));
             self.stack.truncate(stack_offset);
             //println!("Register before: {:?}", self.register);
             self.register.truncate(register_offset);
@@ -379,6 +379,21 @@ impl VM {
         }
     }
 
+    pub fn enter_scope(&mut self, additional_size: u16, frame: Rc<RefCell<CallFrame>>) {
+        frame.borrow_mut().scope_allocations.push(additional_size);
+        frame.borrow_mut().register_declare_offset += additional_size
+    }
+
+    pub fn exit_scope(&mut self, frame: Rc<RefCell<CallFrame>>) {
+        let allocation = frame.borrow_mut().scope_allocations.pop();
+        if let Some(amount) = allocation {
+            self.register.truncate(self.register.size - amount);
+            frame.borrow_mut().register_declare_offset -= amount;
+            return;
+        }
+        println!("Exited inner scope that did not exist.")
+    }
+
     pub fn get_stack_top(&mut self, stack_offset: usize) -> Instance {
         if self.stack.len() - stack_offset <= 0 {
             panic!("The stack was empty!")
@@ -409,6 +424,7 @@ pub struct CallFrame {
     register_access_offset: u16,
     register_declare_offset: u16,
     stack_offset: usize,
+    scope_allocations: Vec<u16>
 }
 
 impl CallFrame {
@@ -417,6 +433,7 @@ impl CallFrame {
             register_access_offset: 0,
             register_declare_offset: 0,
             stack_offset: 0,
+            scope_allocations: vec![]
         }
     }
 
@@ -424,7 +441,8 @@ impl CallFrame {
         CallFrame {
             register_access_offset,
             register_declare_offset,
-            stack_offset
+            stack_offset,
+            scope_allocations: vec![]
         }
     }
 }
@@ -433,13 +451,15 @@ impl CallFrame {
 pub struct Register {
     internal: HashMap<u16, Instance>,
     size: u16,
+    flag: bool
 }
 
 impl Register {
-    pub fn new() -> Register {
+    pub fn new(flag: bool) -> Register {
         Register {
             internal: Default::default(),
-            size: 0
+            size: 0,
+            flag: flag
         }
     }
 
@@ -452,8 +472,10 @@ impl Register {
 
     pub fn get(&self, index: u16) -> Instance {
         match self.internal.get(&index) {
-            Some(instance) => {return instance.to_owned()},
-            None => panic!("Register slot `{}` was empty.", index)
+            Some(instance) => {
+                return instance.to_owned()
+            },
+            None => panic!("Register slot `{}` was empty", index)
         };
     }
 

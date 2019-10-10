@@ -7,7 +7,7 @@ use crate::instance::{
     Instance::*
 };
 use std::convert::TryInto;
-use crate::runtime::InstructionResult::{ReturnVoid, Continue, ReturnInstance};
+use crate::runtime::InstructionResult::{Return, Continue, ReturnWith, ExitScope};
 use std::cell::RefCell;
 use crate::string_pool::StringPool;
 
@@ -35,7 +35,7 @@ impl VM {
         }
     }
 
-    pub fn run_program(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
+    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<CallFrame>) -> InstructionResult {
         self.chunk_size = chunk.register_size as usize;
         loop {
             let op = chunk.get(self.pc);
@@ -44,11 +44,11 @@ impl VM {
                     let result = self.execute_instruction(code, Rc::clone(&chunk), Rc::clone(&frame));
                     match result {
                         Continue => {},
-                        ReturnVoid => return result,
-                        ReturnInstance(instance) => return ReturnInstance(instance)
+                        Return | ExitScope => return result,
+                        ReturnWith(instance) => return ReturnWith(instance),
                     }
                 },
-                None => return ReturnVoid
+                None => return Return
             }
             if !self.jumped {self.pc += 1}
             self.jumped = false
@@ -78,10 +78,12 @@ impl VM {
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.stack_offset) {self.jumped = true},
             OpCode::Call(args) => self.call(*args, frame),
             OpCode::Args(num) => self.add_arguments(*num),
-            OpCode::Return(return_instance) => if *return_instance { return ReturnInstance(self.get_stack_top(frame.stack_offset)) } else { return ReturnVoid }
+            OpCode::Return(return_instance) => if *return_instance { return ReturnWith(self.get_stack_top(frame.stack_offset)) } else { return Return }
             OpCode::InitArray(size) => self.make_array(*size, frame.stack_offset),
             OpCode::IndexGet => self.index_get(frame.stack_offset),
             OpCode::IndexSet => self.index_set(frame.stack_offset),
+            OpCode::EnterScope(size) => {},
+            OpCode::ExitScope => {},
             OpCode::Print => println!("{}", self.get_stack_top(frame.stack_offset)),
         };
         return Continue
@@ -91,13 +93,13 @@ impl VM {
         let instance = if get_const {
             chunk.const_table.get(index)
         } else {
-            self.register.get((&index + &frame.register_offset))
+            self.register.get((&index + &frame.register_access_offset))
         };
         self.stack.push(instance);
     }
 
     fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<CallFrame>) {
-        let register_offset = frame.register_offset;
+        let register_offset = frame.register_access_offset;
         let instance = self.get_stack_top(frame.stack_offset);
         if index < chunk.register_size {
             self.register.set(index + register_offset, instance);
@@ -273,34 +275,23 @@ impl VM {
     }
 
     pub fn call(&mut self, args: u16, previous_frame: Rc<CallFrame>) {
-        /*
-        let func_op = self.get_stack_top(previous_frame.stack_offset);
-        let args = self.split_stack(args as usize, previous_frame.stack_offset);
-        if let Func(func) = func_op {
-            let rg_offset = self.chunk_size;
-            for index in 0..args {
-
-            }
-        }
-        */
-
         let option = self.stack.pop();
         if let Some(Func(func)) = option {
             let chunk = Rc::clone(&func.chunk);
             let stack_offset = self.stack.len();
-            let register_offset = (self.chunk_size + previous_frame.register_offset as usize) as u16;
+            let register_offset = (self.chunk_size + previous_frame.register_access_offset as usize) as u16;
             //println!("Register offset: {}", register_offset);
-            let new_frame = CallFrame::new_with_offset((register_offset) as u16, stack_offset);
+            let new_frame = CallFrame::new_with_offset((register_offset) as u16, (register_offset) as u16, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
-            let result = self.run_program(chunk, Rc::new(new_frame));
+            let result = self.execute_chunk(chunk, Rc::new(new_frame));
             self.stack.truncate(stack_offset);
             //println!("Register before: {:?}", self.register);
             self.register.truncate(register_offset);
             //println!("Register after: {:?}", self.register);
             self.pc = previous_pc;
             match result {
-                InstructionResult::ReturnInstance(instance) => self.stack.push(instance),
+                InstructionResult::ReturnWith(instance) => self.stack.push(instance),
                 _ => {}
             }
         }
@@ -415,21 +406,24 @@ Holds the current offset in the registry of the call frame as well as some
 other useful information.
 */
 pub struct CallFrame {
-    register_offset: u16,
+    register_access_offset: u16,
+    register_declare_offset: u16,
     stack_offset: usize,
 }
 
 impl CallFrame {
     pub fn new() -> CallFrame {
         CallFrame {
-            register_offset: 0,
+            register_access_offset: 0,
+            register_declare_offset: 0,
             stack_offset: 0,
         }
     }
 
-    pub fn new_with_offset(register_offset: u16, stack_offset: usize) -> CallFrame {
+    pub fn new_with_offset(register_access_offset: u16, register_declare_offset: u16,stack_offset: usize) -> CallFrame {
         CallFrame {
-            register_offset,
+            register_access_offset,
+            register_declare_offset,
             stack_offset
         }
     }
@@ -482,6 +476,7 @@ impl Register {
 
 pub enum InstructionResult{
     Continue,
-    ReturnVoid,
-    ReturnInstance(Instance)
+    Return,
+    ReturnWith(Instance),
+    ExitScope,
 }

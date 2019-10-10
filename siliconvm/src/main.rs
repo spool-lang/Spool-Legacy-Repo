@@ -44,7 +44,7 @@ fn main() {
     chunk.write(IndexGet);
     chunk.write(Print);
 
-    vm.run_program(Rc::new(chunk), Rc::new(CallFrame::new()));
+    vm.execute_chunk(Rc::new(chunk), Rc::new(CallFrame::new()));
 
     /*
     if args.len() >= 2 {

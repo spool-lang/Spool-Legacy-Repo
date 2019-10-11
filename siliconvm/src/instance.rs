@@ -40,7 +40,7 @@ pub enum Instance {
     Str(Rc<String>),
     Array(Rc<RefCell<Vec<Instance>>>),
     //Represents a custom class instance.
-    //CustomInstance(Box<CustomInstance>),
+    //ClassInstance(Box<ClassInstance>),
     //Represents a class object.
     //Class(Box<Class>)
     //Represents a function.
@@ -92,33 +92,20 @@ impl Display for Instance {
     }
 }
 
-// Represents a class declared in Silicon code:
-pub struct Class {
-    canonical_name : &'static str,
-    field_info : Vec<FieldInfo>
+#[derive(Debug)]
+pub struct Variable {
+    pub(crate) is_const: bool,
+    pub(crate) stored: Instance
 }
 
-pub struct FieldInfo {
-    is_const : bool,
-    modifier : AccessModifier,
-}
+impl Variable {
 
-pub enum AccessModifier {
-    Public,
-    Protected,
-    Private,
-    Internal
-}
-
-// Represents an instance of a class that is not built into the VM.
-pub struct CustomInstance {
-    class : Class,
-    fields : Vec<Field>,
-}
-
-pub struct Field {
-    field_info : FieldInfo,
-    value : Instance,
+    pub(crate) fn new(is_const: bool, stored: Instance) -> Variable {
+        Variable {
+            is_const,
+            stored
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

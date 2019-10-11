@@ -8,7 +8,7 @@ pub enum OpCode {
     GetTrue,
     GetFalse,
     Get(bool, u16),
-    Set(u16),
+    Set(bool, u16),
     Add,
     Subtract,
     Multiply,

@@ -2,10 +2,7 @@ use std::rc::Rc;
 use std::collections::HashMap;
 use std::slice::Chunks;
 use crate::opcode::{OpCode, Chunk};
-use crate::instance::{
-    Instance,
-    Instance::*
-};
+use crate::instance::{Instance, Instance::*, Variable};
 use std::convert::TryInto;
 use crate::runtime::InstructionResult::{Return, Continue, ReturnWith, ExitScope};
 use std::cell::RefCell;
@@ -40,7 +37,7 @@ impl VM {
         let register_offset = frame.borrow().register_access_offset;
         let i = 0;
         for instance in args {
-            self.register.set(register_offset + i, instance)
+            self.register.set(register_offset + i, true, instance)
         }
 
         loop {
@@ -66,7 +63,7 @@ impl VM {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
             OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk, frame),
-            OpCode::Set(index) => self.pop_stack(*index, chunk, frame),
+            OpCode::Set(is_const, index) => self.pop_stack(*index, *is_const, chunk, frame),
             OpCode::Add => self.add_operands(frame.borrow().stack_offset),
             OpCode::Subtract => self.subtract_operands(frame.borrow().stack_offset),
             OpCode::Multiply => self.multiply_operands(frame.borrow().stack_offset),
@@ -103,11 +100,11 @@ impl VM {
         self.stack.push(instance);
     }
 
-    fn pop_stack(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
+    fn pop_stack(&mut self, index: u16, is_const: bool, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
         let register_offset = frame.borrow().register_declare_offset;
         let instance = self.get_stack_top(frame.borrow().stack_offset);
         if index < chunk.register_size {
-            self.register.set(index + register_offset, instance);
+            self.register.set(index + register_offset, is_const, instance);
             return;
         }
     }
@@ -439,7 +436,7 @@ impl CallFrame {
 
 #[derive(Debug)]
 pub struct Register {
-    internal: HashMap<u16, Instance>,
+    internal: HashMap<u16, RefCell<Variable>>,
     size: u16,
     flag: bool
 }
@@ -453,17 +450,32 @@ impl Register {
         }
     }
 
-    pub fn set(&mut self, index: u16, instance: Instance) {
+    pub fn set(&mut self, index: u16, is_const: bool, instance: Instance) {
         if !(self.internal.contains_key(&index)) {
-            self.size = index + 1;
+            self.internal.insert(index, RefCell::new(Variable::new(is_const, instance)));
+            if self.size <= index + 1 {
+                self.size = index + 1;
+            }
         }
-        self.internal.insert(index, instance);
+        else {
+            match self.internal.get(&index) {
+                Some(var) => {
+                    if var.borrow().is_const == false {
+                        var.borrow_mut().stored = instance;
+                        return
+                    }
+                    panic!("Attempted to reassign constant variable!")
+                },
+                None => panic!("Register slot {} was empty!", index)
+            }
+
+        }
     }
 
     pub fn get(&self, index: u16) -> Instance {
         match self.internal.get(&index) {
-            Some(instance) => {
-                return instance.to_owned()
+            Some(var) => {
+                return var.borrow().stored.to_owned()
             },
             None => panic!("Register slot `{}` was empty", index)
         };

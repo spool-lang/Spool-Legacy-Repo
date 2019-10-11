@@ -34,9 +34,13 @@ fn main() {
     let mut chunk = Chunk::new();
     chunk.add_const(0, Func(Rc::new(func)));
     chunk.add_const(1, Str(pooled_string));
+    chunk.set_register_size(1);
     chunk.write(Get(true, 1));
     chunk.write(Get(true, 0));
-    chunk.write(Call(1));
+    chunk.write(Call);
+    chunk.write(Get(true, 1));
+    chunk.write(Set(true, 0));
+    chunk.write(Get(false, 0));
 
     vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![]);
 

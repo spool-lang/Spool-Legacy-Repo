@@ -122,14 +122,59 @@ impl Display for Instance {
 
 #[derive(Debug)]
 pub struct Type {
-    pub(crate) canonical_name: Rc<String>
+    pub(crate) canonical_name: Rc<String>,
+    is_generic: bool,
+    type_args: Vec<Rc<Type>>
 }
 
 impl Type {
     pub fn new(canonical_name: Rc<String>) -> Type {
         Type {
-            canonical_name
+            canonical_name,
+            is_generic: false,
+            type_args: vec![]
         }
+    }
+
+    pub fn new_generic(canonical_name: Rc<String>) -> Type {
+        Type {
+            canonical_name,
+            is_generic: true,
+            type_args: vec![]
+        }
+    }
+
+    pub fn get_canonical_name(&self) -> Rc<String> {
+        let mut actual_name = format!("{}", self.canonical_name);
+        if self.type_args.len() > 0 {
+            actual_name.push_str("<");
+            let mut i: usize = 0;
+            for _type in &self.type_args {
+                let type_name = format!("{}", _type.get_canonical_name());
+                actual_name.push_str(type_name.as_str());
+                if i < *&self.type_args.len() {
+                    actual_name.push(',')
+                }
+            }
+            actual_name.push_str(">");
+        }
+
+        Rc::new(actual_name)
+    }
+
+    pub fn reify(&self, type_args: Vec<Rc<Type>>) {
+        if self.is_generic {
+            if type_args.len() == self.type_args.len() {
+                Type {
+                    canonical_name: Rc::clone(&self.canonical_name),
+                    is_generic: false,
+                    type_args
+                };
+            }
+            panic!("Error during reification process.")
+        }
+        panic!("Attempted to reify non-generic type.")
+
     }
 }
 

@@ -22,4 +22,8 @@ impl StringPool {
             }
         }
     }
+
+    pub(crate) fn pool_str(&mut self, to_pool: &str) -> Rc<String> {
+        self.pool_string(to_pool.to_string())
+    }
 }

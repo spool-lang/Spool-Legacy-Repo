@@ -2,14 +2,14 @@ use std::rc::Rc;
 use std::collections::HashMap;
 use std::slice::Chunks;
 use crate::opcode::{OpCode, Chunk};
-use crate::instance::{Instance, Instance::*, Variable};
+use crate::instance::{Instance, Instance::*, Variable, Type};
 use std::convert::TryInto;
 use crate::runtime::InstructionResult::{Return, Continue, ReturnWith, ExitScope};
 use std::cell::RefCell;
 use crate::string_pool::StringPool;
 
 pub struct VM {
-    class_registry: HashMap<String, Instance>,
+    type_registry: TypeRegistry,
     pub string_pool: StringPool,
     chunk_size: usize,
     pub register: Register,
@@ -21,9 +21,11 @@ pub struct VM {
 impl VM {
 
     pub fn new() -> VM {
+        let mut string_pool = StringPool::new();
+        let mut type_registry = TypeRegistry::new(&mut string_pool);
         VM {
-            class_registry: Default::default(),
-            string_pool: StringPool::new(),
+            type_registry,
+            string_pool,
             chunk_size: 0,
             register: Register::new(true),
             stack: vec![],
@@ -498,6 +500,51 @@ impl Register {
                 return;
             }
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct TypeRegistry {
+    type_map: HashMap<u16, Rc<Type>>,
+    name_map: HashMap<Rc<String>, u16>,
+    size: u16
+}
+
+impl TypeRegistry {
+    fn new(string_pool: &mut StringPool) -> TypeRegistry {
+        let mut _self = TypeRegistry {
+            type_map: Default::default(),
+            name_map: Default::default(),
+            size: 0
+        };
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Boolean")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Byte")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.UByte")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Int16")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.UInt16")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Int32")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.UInt32")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Int64")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.UInt64")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Int128")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.UInt128")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Float32")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Float64")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Char")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.String")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Array")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Func")));
+        _self
+    }
+
+    fn register(&mut self, _type: Type) {
+        let index = self.size;
+        let name = Rc::clone(&_type.canonical_name);
+
+        self.size += 1;
+
+        self.name_map.insert(name, index);
+        self.type_map.insert(index, Rc::from(_type));
     }
 }
 

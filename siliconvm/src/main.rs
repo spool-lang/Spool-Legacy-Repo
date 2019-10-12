@@ -43,7 +43,7 @@ fn main() {
     chunk.write(Get(false, 0));
 
     let test = Bool(true);
-    let bool_type = Type::new("silicon.lang.Boolean".to_string());
+    let bool_type = Type::new(Rc::new("silicon.lang.Boolean".to_string()));
     let is = bool_type.is(test);
     println!("Is it an instance? {}", is);
 

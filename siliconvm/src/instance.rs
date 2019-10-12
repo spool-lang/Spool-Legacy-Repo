@@ -92,6 +92,44 @@ impl Display for Instance {
     }
 }
 
+pub struct Type {
+    canonical_name: String
+}
+
+impl Type {
+    pub fn new(canonical_name: String) -> Type {
+        Type {
+            canonical_name
+        }
+    }
+}
+
+impl Type {
+
+    pub fn is(&self, instance: Instance) -> bool {
+        self.canonical_name == match instance {
+            Instance::Bool(_) => "silicon.lang.Boolean",
+            Instance::Byte(_) => "silicon.lang.Byte",
+            Instance::UByte(_) => "silicon.lang.UByte",
+            Instance::Int16(_) => "silicon.lang.Int16",
+            Instance::UInt16(_) => "silicon.lang.UInt16",
+            Instance::Int32(_) => "silicon.lang.Int32",
+            Instance::UInt32(_) => "silicon.lang.UInt32",
+            Instance::Int64(_) => "silicon.lang.Int64",
+            Instance::UInt64(_) => "silicon.lang.UInt64",
+            Instance::Int128(_) => "silicon.lang.Int128",
+            Instance::UInt128(_) => "silicon.lang.UInt128",
+            Instance::Float32(_) => "silicon.lang.Float32",
+            Instance::Float64(_) => "silicon.lang.Float64",
+            Instance::Char(_) => "silicon.lang.Char",
+            Instance::Str(_) => "silicon.lang.String",
+            Instance::Array(_) => "silicon.lang.Array",
+            Instance::Func(_) => "silicon.lang.Func",
+            _ => ""
+        }.to_string() || self.canonical_name == "silicon.lang.Object".to_string()
+    }
+}
+
 #[derive(Debug)]
 pub struct Variable {
     pub(crate) is_const: bool,

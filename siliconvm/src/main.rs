@@ -6,7 +6,7 @@ use silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::{VM, CallFrame};
 use crate::opcode::OpCode::*;
-use crate::instance::{Instance, Instance::*, Function};
+use crate::instance::{Instance, Instance::*, Function, Type};
 use std::intrinsics::transmute;
 use crate::opcode::Chunk;
 use std::rc::Rc;
@@ -41,6 +41,11 @@ fn main() {
     chunk.write(Get(true, 1));
     chunk.write(Set(true, 0));
     chunk.write(Get(false, 0));
+
+    let test = Bool(true);
+    let bool_type = Type::new("silicon.lang.Boolean".to_string());
+    let is = bool_type.is(test);
+    println!("Is it an instance? {}", is);
 
     vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![]);
 

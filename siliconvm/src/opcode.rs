@@ -22,6 +22,7 @@ pub enum OpCode {
     GreaterOrEq,
     Eq,
     NotEq,
+    Is(u16),
     Concat,
     Jump(bool, u16),
     Call,

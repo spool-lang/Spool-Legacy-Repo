@@ -79,6 +79,7 @@ impl VM {
             OpCode::GreaterOrEq => self.compare_operand_size(true, true, frame.borrow().stack_offset),
             OpCode::Eq => self.equate_operands(false, frame.borrow().stack_offset),
             OpCode::NotEq => self.equate_operands(true, frame.borrow().stack_offset),
+            OpCode::Is(type_index) => self.type_test(*type_index, frame.borrow().stack_offset),
             OpCode::Concat => self.concat(frame.borrow().stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.borrow().stack_offset) {self.jumped = true},
             OpCode::Call => self.call_func(frame),
@@ -234,6 +235,12 @@ impl VM {
             (Bool(left_val), Bool(right_val)) => self.stack.push(Bool((left_val == right_val) && !negate)),
             _ => self.stack.push(Bool(false))
         }
+    }
+
+    fn type_test(&mut self, type_index: u16, stack_offset: usize) {
+        let operand = self.get_stack_top(stack_offset);
+        let _type = self.type_registry.get(type_index);
+        self.stack.push(Bool(_type.is(operand)))
     }
 
     fn try_jump(&mut self, jump_index: u16, chunk: Rc<Chunk>, stack_offset: usize) -> bool {
@@ -545,6 +552,13 @@ impl TypeRegistry {
 
         self.name_map.insert(name, index);
         self.type_map.insert(index, Rc::from(_type));
+    }
+
+    fn get(&self, index: u16) -> Rc<Type> {
+        match self.type_map.get(&index) {
+            None => panic!(""),
+            Some(t) => Rc::clone(t),
+        }
     }
 }
 

@@ -135,7 +135,7 @@ impl Type {
 
 impl Type {
 
-    pub fn is(&self, instance: Instance) -> bool {
+    pub fn is(&self, instance: &Instance) -> bool {
         &*self.canonical_name == &*instance.get_canonical_name() || &*self.canonical_name == &*"silicon.lang.Object".to_string()
     }
 }
@@ -143,29 +143,45 @@ impl Type {
 #[derive(Debug)]
 pub struct Variable {
     pub(crate) is_const: bool,
-    pub(crate) stored: Instance
+    pub(crate) stored: Instance,
+    pub(crate) _type: Rc<Type>
 }
 
 impl Variable {
 
-    pub(crate) fn new(is_const: bool, stored: Instance) -> Variable {
+    pub(crate) fn new(is_const: bool, stored: Instance, _type: Rc<Type>) -> Variable {
         Variable {
             is_const,
-            stored
+            stored,
+            _type
         }
+    }
+
+    pub(crate) fn set(&mut self, instance: Instance) {
+        if self.is_const {
+            panic!("Attempted to set constant variable!")
+        }
+
+        if self._type.is(&instance) {
+            self.stored = instance;
+            return;
+        }
+        panic!("Type mismatch!")
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Function {
     pub(crate) arity: u8,
+    pub(crate) params: Vec<Rc<Type>>,
     pub(crate) chunk: Rc<Chunk>
 }
 
 impl Function {
-    pub(crate) fn new(args: u8, chunk: Chunk) -> Function {
+    pub(crate) fn new(arity: u8, params: Vec<Rc<Type>>, chunk: Chunk) -> Function {
         Function {
-            arity: args,
+            arity,
+            params,
             chunk: Rc::new(chunk)
         }
     }

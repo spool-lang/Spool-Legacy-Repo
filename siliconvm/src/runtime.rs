@@ -34,12 +34,14 @@ impl VM {
         }
     }
 
-    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>, args: Vec<Instance>) -> InstructionResult {
+    pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>, args: Vec<Instance>, arg_types: Vec<Rc<Type>>) -> InstructionResult {
         self.chunk_size = chunk.register_size as usize;
         let register_offset = frame.borrow().register_access_offset;
-        let i = 0;
-        for instance in args {
-            self.register.set(register_offset + i, true, instance)
+
+        for i in 0..args.len() {
+            let _type: Rc<Type> = Rc::clone(&arg_types.get(i).unwrap());
+            let instance = args.get(i).unwrap();
+            self.register.declare(true, instance.to_owned(), _type);
         }
 
         loop {
@@ -64,8 +66,9 @@ impl VM {
         match op_code {
             OpCode::GetTrue => self.stack.push(Bool(true)),
             OpCode::GetFalse => self.stack.push(Bool(false)),
-            OpCode::Get(get_const, index) => self.push_stack(*index, *get_const, chunk, frame),
-            OpCode::Set(is_const, index) => self.pop_stack(*index, *is_const, chunk, frame),
+            OpCode::Get(get_const, index) => self.get_variable(*index, *get_const, chunk, frame),
+            OpCode::Declare(is_const, type_index) => self.declare_variable(*type_index, *is_const, frame),
+            OpCode::Set(index) => self.set_variable(*index, chunk, frame),
             OpCode::Add => self.add_operands(frame.borrow().stack_offset),
             OpCode::Subtract => self.subtract_operands(frame.borrow().stack_offset),
             OpCode::Multiply => self.multiply_operands(frame.borrow().stack_offset),
@@ -94,7 +97,7 @@ impl VM {
         return Continue
     }
 
-    fn push_stack(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
+    fn get_variable(&mut self, index: u16, get_const: bool, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
         let instance = if get_const {
             chunk.get_const(index)
         } else {
@@ -103,13 +106,17 @@ impl VM {
         self.stack.push(instance);
     }
 
-    fn pop_stack(&mut self, index: u16, is_const: bool, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
-        let register_offset = frame.borrow().register_declare_offset;
+    fn declare_variable(&mut self, type_index: u16, is_const: bool, frame: Rc<RefCell<CallFrame>>) {
+        let register = frame.borrow().register_declare_offset;
         let instance = self.get_stack_top(frame.borrow().stack_offset);
-        if index < chunk.register_size {
-            self.register.set(index + register_offset, is_const, instance);
-            return;
-        }
+        let _type: Rc<Type> = self.type_registry.get(type_index);
+        self.register.declare(is_const, instance, Rc::clone(&_type))
+    }
+
+    fn set_variable(&mut self, index: u16, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>) {
+        let register_offset = frame.borrow().register_access_offset;
+        let instance = self.get_stack_top(frame.borrow().stack_offset);
+        self.register.set(index, instance)
     }
 
     fn add_operands(&mut self, stack_offset: usize) {
@@ -240,7 +247,7 @@ impl VM {
     fn type_test(&mut self, type_index: u16, stack_offset: usize) {
         let operand = self.get_stack_top(stack_offset);
         let _type = self.type_registry.get(type_index);
-        self.stack.push(Bool(_type.is(operand)))
+        self.stack.push(Bool(_type.is(&operand)))
     }
 
     fn try_jump(&mut self, jump_index: u16, chunk: Rc<Chunk>, stack_offset: usize) -> bool {
@@ -276,10 +283,13 @@ impl VM {
             let new_frame = CallFrame::new_with_offset(register_offset, register_offset, stack_offset);
             let previous_pc = self.pc;
             self.pc = 0;
-            let mut args_vec: Vec<Instance> = self.split_stack(func.arity as usize, previous_frame.borrow().stack_offset);
+            let args_vec: Vec<Instance> = self.split_stack(func.arity as usize, previous_frame.borrow().stack_offset);
             let stack_offset = self.stack.len();
 
-            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)), args_vec);
+            let func = Rc::clone(&func);
+
+
+            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)), args_vec, func.params.clone());
             self.register.truncate(register_offset);
             self.stack.truncate(stack_offset);
             self.pc = previous_pc;
@@ -294,7 +304,7 @@ impl VM {
     }
 
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
-        let mut array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);
+        let array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);
         self.stack.push(Array(Rc::new(RefCell::new(array))));
     }
 
@@ -341,7 +351,7 @@ impl VM {
         let array = self.get_stack_top(stack_offset);
 
         match array {
-            Array(mut vec) => {
+            Array(vec) => {
                 let mut index_num = 0;
                 match index {
                     Byte(num) => index_num = num as usize,
@@ -459,35 +469,28 @@ impl Register {
         }
     }
 
-    pub fn set(&mut self, index: u16, is_const: bool, instance: Instance) {
-        if !(self.internal.contains_key(&index)) {
-            self.internal.insert(index, RefCell::new(Variable::new(is_const, instance)));
-            if self.size <= index + 1 {
-                self.size = index + 1;
-            }
-        }
-        else {
-            match self.internal.get(&index) {
-                Some(var) => {
-                    if var.borrow().is_const == false {
-                        var.borrow_mut().stored = instance;
-                        return
-                    }
-                    panic!("Attempted to reassign constant variable!")
-                },
-                None => panic!("Register slot {} was empty!", index)
-            }
+    pub fn declare(&mut self, is_const: bool, instance: Instance, _type: Rc<Type>) {
+        let index = self.size;
+        self.size += 1;
 
+        let variable = Variable::new(is_const, instance, _type);
+        self.internal.insert(index, RefCell::from(variable));
+    }
+
+    pub fn set(&mut self, index: u16, instance: Instance) {
+        match self.internal.get(&index) {
+            None => panic!(),
+            Some(var) => {
+                var.borrow_mut().set(instance)
+            },
         }
     }
 
     pub fn get(&self, index: u16) -> Instance {
         match self.internal.get(&index) {
-            Some(var) => {
-                return var.borrow().stored.to_owned()
-            },
-            None => panic!("Register slot `{}` was empty", index)
-        };
+            None => panic!(),
+            Some(var) => var.borrow().stored.to_owned(),
+        }
     }
 
     pub fn truncate(&mut self, to_size: u16) {

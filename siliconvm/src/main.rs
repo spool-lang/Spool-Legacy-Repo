@@ -26,11 +26,23 @@ fn main() {
 
     let mut chunk = Chunk::new();
     chunk.add_const(0, Bool(true));
+    chunk.add_const(1, Bool(false));
+    chunk.add_const(2, Byte(0));
     chunk.write(Get(true, 0));
     chunk.write(Is(0));
     chunk.write(Print);
+    chunk.write(Get(true, 0));
+    chunk.write(Declare(false, 0));
+    chunk.write(Get(false, 0));
+    chunk.write(Print);
+    chunk.write(Get(true, 1));
+    chunk.write(Set(0));
+    chunk.write(Get(false, 0));
+    chunk.write(Print);
+    chunk.write(Get(true, 2));
+    chunk.write(Set(0));
 
-    vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![]);
+    vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![], vec![]);
 
     /*
     if args.len() >= 2 {

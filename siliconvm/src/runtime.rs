@@ -305,7 +305,21 @@ impl VM {
 
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
         let array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);
-        self.stack.push(Array(Rc::new(RefCell::new(array))));
+        let mut _type = self.type_registry.get(0);
+        let mut check = false;
+        for instance in &array {
+            if !check {
+                _type = self.type_registry.get_by_name(instance.get_canonical_name());
+                check = true
+            }
+            else {
+                if !_type.is(instance) {
+                    _type = self.type_registry.get(0);
+                }
+            }
+        }
+
+        self.stack.push(Array(Rc::new(RefCell::new(array)), Rc::clone(&_type)));
     }
 
     pub fn index_get(&mut self, stack_offset: usize) {
@@ -313,7 +327,7 @@ impl VM {
         let indexable = self.get_stack_top(stack_offset);
 
         match indexable {
-            Array(vec) => {
+            Array(vec, _) => {
                 let mut index_num = 0;
                 match index {
                     Byte(num) => index_num = num as usize,
@@ -351,7 +365,7 @@ impl VM {
         let array = self.get_stack_top(stack_offset);
 
         match array {
-            Array(vec) => {
+            Array(vec, _type) => {
                 let mut index_num = 0;
                 match index {
                     Byte(num) => index_num = num as usize,
@@ -361,7 +375,8 @@ impl VM {
                     _ => panic!("Invalid array index.")
                 };
                 vec.borrow_mut().remove(index_num);
-                vec.borrow_mut().insert(index_num, item)
+                if _type.is(&item) { vec.borrow_mut().insert(index_num, item) }
+                else { panic!("Type mismatch!") }
             },
             _ => panic!("The instance is not indexable!")
         }
@@ -465,7 +480,7 @@ impl Register {
         Register {
             internal: Default::default(),
             size: 0,
-            flag: flag
+            flag
         }
     }
 
@@ -527,6 +542,7 @@ impl TypeRegistry {
             name_map: Default::default(),
             size: 0
         };
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Object")));
         _self.register(Type::new(string_pool.pool_str("silicon.lang.Boolean")));
         _self.register(Type::new(string_pool.pool_str("silicon.lang.Byte")));
         _self.register(Type::new(string_pool.pool_str("silicon.lang.UByte")));
@@ -559,8 +575,15 @@ impl TypeRegistry {
 
     fn get(&self, index: u16) -> Rc<Type> {
         match self.type_map.get(&index) {
-            None => panic!(""),
+            None => panic!("Non-existant type!"),
             Some(t) => Rc::clone(t),
+        }
+    }
+
+    fn get_by_name(&self, name: Rc<String>) -> Rc<Type> {
+        match self.name_map.get(&name) {
+            None => panic!("Type {} does not exist.", name),
+            Some(i) => self.get(*i),
         }
     }
 }

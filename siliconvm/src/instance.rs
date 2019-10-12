@@ -38,7 +38,7 @@ pub enum Instance {
     //Complex(),
     Char(char),
     Str(Rc<String>),
-    Array(Rc<RefCell<Vec<Instance>>>),
+    Array(Rc<RefCell<Vec<Instance>>>, Rc<Type>),
     //Represents a custom class instance.
     //ClassInstance(Box<ClassInstance>),
     //Represents a class object.
@@ -49,7 +49,7 @@ pub enum Instance {
 
 impl Instance {
 
-    fn get_canonical_name(&self) -> Rc<String> {
+    pub fn get_canonical_name(&self) -> Rc<String> {
         Rc::new(
             match self {
                 Instance::Bool(_) => "silicon.lang.Boolean",
@@ -67,7 +67,7 @@ impl Instance {
                 Instance::Float64(_) => "silicon.lang.Float64",
                 Instance::Char(_) => "silicon.lang.Char",
                 Instance::Str(_) => "silicon.lang.String",
-                Instance::Array(_) => "silicon.lang.Array",
+                Instance::Array(_, _) => "silicon.lang.Array",
                 Instance::Func(_) => "silicon.lang.Func",
                 _ => ""
             }.to_string()
@@ -93,8 +93,8 @@ impl Display for Instance {
             Instance::Float64(float64) => write!(f, "{}f64", float64),
             Instance::Char(character) => write!(f, "'{}'", character),
             Instance::Str(string) => write!(f, "\"{}\"", string),
-            Instance::Array(array) => {
-                let mut array_string = "[".to_string();
+            Instance::Array(array, _type) => {
+                let mut array_string = format!("{}[", _type.get_canonical_name());
                 let borrowed = array.borrow_mut();
 
                 if !borrowed.is_empty() {
@@ -181,7 +181,7 @@ impl Type {
 impl Type {
 
     pub fn is(&self, instance: &Instance) -> bool {
-        &*self.canonical_name == &*instance.get_canonical_name() || &*self.canonical_name == &*"silicon.lang.Object".to_string()
+        &*self.canonical_name == &*"silicon.lang.Object".to_string() || &*self.canonical_name == &*instance.get_canonical_name()
     }
 }
 

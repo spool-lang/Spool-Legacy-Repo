@@ -25,7 +25,14 @@ fn main() {
     let mut vm = VM::new();
 
     let mut chunk = Chunk::new();
-
+    chunk.set_register_size(1);
+    chunk.add_const(0, Bool(true));
+    chunk.add_const(1, Byte(0));
+    chunk.write(Get(true, 0));
+    chunk.write(InitArray(1));
+    chunk.write(Declare(false, 0));
+    chunk.write(Get(false, 0));
+    chunk.write(Print);
 
     vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![], vec![]);
 

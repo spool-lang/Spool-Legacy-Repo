@@ -44,7 +44,8 @@ pub enum Instance {
     //Represents a class object.
     //Class(Box<Class>)
     //Represents a function.
-    Func(Rc<Function>)
+    Func(Rc<Function>),
+    Void
 }
 
 impl Instance {
@@ -69,6 +70,7 @@ impl Instance {
                 Instance::Str(_) => "silicon.lang.String",
                 Instance::Array(_, _) => "silicon.lang.Array",
                 Instance::Func(_) => "silicon.lang.Func",
+                Instance::Void => "silicon.lang.Void",
                 _ => ""
             }.to_string()
         )
@@ -116,6 +118,7 @@ impl Display for Instance {
                 write!(f, "{}]", array_string)
             },
             Instance::Func(func) => write!(f, "<function>{}", ""),
+            Instance::Void => write!(f, "{}", "void")
         };
     }
 }
@@ -219,14 +222,16 @@ impl Variable {
 pub struct Function {
     pub(crate) arity: u8,
     pub(crate) params: Vec<Rc<Type>>,
+    pub(crate) return_type: Rc<Type>,
     pub(crate) chunk: Rc<Chunk>
 }
 
 impl Function {
-    pub(crate) fn new(arity: u8, params: Vec<Rc<Type>>, chunk: Chunk) -> Function {
+    pub(crate) fn new(arity: u8, params: Vec<Rc<Type>>, return_type: Rc<Type>,chunk: Chunk) -> Function {
         Function {
             arity,
             params,
+            return_type,
             chunk: Rc::new(chunk)
         }
     }

@@ -27,17 +27,21 @@ fn main() {
     func_chunk.set_register_size(1);
     func_chunk.write(Get(false, 0));
     func_chunk.write(Print);
+    func_chunk.write(Get(false, 0));
+    func_chunk.write(Return(true));
+
 
     let string_type = Rc::new(Type::new(Rc::from("silicon.lang.String".to_string())));
-    let func = Function::new(1, vec![string_type], func_chunk);
+    let func = Function::new(1, vec![Rc::clone(&string_type)], string_type, func_chunk);
 
     let mut chunk = Chunk::new();
     chunk.set_register_size(1);
     chunk.add_const(0, Func(Rc::from(func)));
-    chunk.add_const(1, Bool(true));
+    chunk.add_const(1, Str(Rc::from("Hi!".to_string())));
     chunk.write(Get(true, 1));
     chunk.write(Get(true, 0));
     chunk.write(Call);
+    chunk.write(Print);
 
     vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![], vec![]);
 

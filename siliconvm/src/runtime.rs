@@ -298,13 +298,20 @@ impl VM {
 
 
             let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)), args_vec, func.params.clone());
+
             self.register.truncate(register_offset);
             self.stack.truncate(stack_offset);
             self.pc = previous_pc;
 
-            match result {
-                InstructionResult::ReturnWith(instance) => self.stack.push(instance),
-                _ => {}
+            let return_type = func.return_type.clone();
+            if &*return_type.canonical_name != "silicon.lang.Void" {
+                match result {
+                    ReturnWith(instance) => {
+                        if !return_type.is(&instance)  { panic!()}
+                        self.stack.push(instance)
+                    },
+                    _ => panic!()
+                }
             }
             return;
         }
@@ -568,6 +575,7 @@ impl TypeRegistry {
         _self.register(Type::new(string_pool.pool_str("silicon.lang.String")));
         _self.register(Type::new(string_pool.pool_str("silicon.lang.Array")));
         _self.register(Type::new(string_pool.pool_str("silicon.lang.Func")));
+        _self.register(Type::new(string_pool.pool_str("silicon.lang.Void")));
         _self
     }
 

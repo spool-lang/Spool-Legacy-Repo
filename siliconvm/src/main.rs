@@ -23,16 +23,21 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let mut vm = VM::new();
+    let mut func_chunk = Chunk::new();
+    func_chunk.set_register_size(1);
+    func_chunk.write(Get(false, 0));
+    func_chunk.write(Print);
+
+    let string_type = Rc::new(Type::new(Rc::from("silicon.lang.String".to_string())));
+    let func = Function::new(1, vec![string_type], func_chunk);
 
     let mut chunk = Chunk::new();
     chunk.set_register_size(1);
-    chunk.add_const(0, Bool(true));
-    chunk.add_const(1, Byte(0));
+    chunk.add_const(0, Func(Rc::from(func)));
+    chunk.add_const(1, Bool(true));
+    chunk.write(Get(true, 1));
     chunk.write(Get(true, 0));
-    chunk.write(InitArray(1));
-    chunk.write(Declare(false, 0));
-    chunk.write(Get(false, 0));
-    chunk.write(Print);
+    chunk.write(Call);
 
     vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![], vec![]);
 

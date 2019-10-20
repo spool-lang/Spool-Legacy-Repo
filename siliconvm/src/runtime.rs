@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use crate::string_pool::StringPool;
 
 pub struct VM {
-    type_registry: TypeRegistry,
+    pub(crate) type_registry: TypeRegistry,
     pub string_pool: StringPool,
     chunk_size: usize,
     pub register: Register,
@@ -284,6 +284,14 @@ impl VM {
             let previous_pc = self.pc;
             self.pc = 0;
             let args_vec: Vec<Instance> = self.split_stack(func.arity as usize, previous_frame.borrow().stack_offset);
+            let param_types: Vec<Rc<Type>> = func.params.clone();
+
+            let mut i = 0;
+            for param in param_types {
+                if !param.is(args_vec.get(0).unwrap()) {panic!("!!!")}
+                i += 1;
+            }
+
             let stack_offset = self.stack.len();
 
             let func = Rc::clone(&func);

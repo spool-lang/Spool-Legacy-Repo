@@ -10,6 +10,9 @@ enum class TokenType {
     DIVIDE,
     POW,
     DOT,
+    //Other
+    COMMA,
+    COLIN,
     // Logic Operators
     LESS,
     GREATER,
@@ -33,5 +36,14 @@ enum class TokenType {
     BRACE_LEFT,
     BRACE_RIGHT,
     PAREN_LEFT,
-    PAREN_RIGHT
+    PAREN_RIGHT,
+    //Literals
+    ID,
+    NUMBER,
+    STRING,
+    //Keywords
+    FUNC,
+    CLASS,
+    VAR,
+    CONST
 }

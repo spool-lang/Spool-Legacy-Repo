@@ -3,10 +3,11 @@ package silicon
 import java.lang.Exception
 
 class Lexer(private val source: String) {
-    private var tokens: ArrayList<Token> = arrayListOf()
+    private var tokens: MutableList<Token> = mutableListOf()
     private var index: Int = 0
     private var row: Long = 0
     private var column: Long = 0
+    private val kewords: MutableMap<String, TokenType> = mutableMapOf()
 
     @Throws(Exception::class)
     fun lex(): List<Token> {
@@ -25,6 +26,11 @@ class Lexer(private val source: String) {
                 '=' -> pattern(TokenType.EQUAL, "==") || symbol(TokenType.ASSIGN, '=')
                 '.' -> symbol(TokenType.DOT, '.')
 
+                // Other
+                ',' -> symbol(TokenType.COMMA, ',')
+                ':' -> symbol(TokenType.COLIN, ':')
+                '"' -> string()
+
                 // Logic Operators
                 '<' -> pattern(TokenType.LESS_EQUAL, "<=") || symbol(TokenType.LESS, '<')
                 '>' -> pattern(TokenType.GREATER_EQUAL, ">=") || symbol(TokenType.GREATER, ">")
@@ -37,6 +43,14 @@ class Lexer(private val source: String) {
                 '}' -> symbol(TokenType.BRACE_RIGHT, '}')
                 '(' -> symbol(TokenType.PAREN_LEFT, '(')
                 ')' -> symbol(TokenType.PAREN_RIGHT, ')')
+
+                // Anything that can't be parsed with pattern matching.
+                else -> {
+                    when {
+                        char.isLetter() -> identifier(char)
+                        char.isDigit() -> number(char)
+                    }
+                }
             }
         }
 
@@ -64,7 +78,40 @@ class Lexer(private val source: String) {
         return true
     }
 
+    private fun identifier(first: Char) {
+        var word = "$first"
+
+        while (peek(0).isLetter()) word = "$word${next()}"
+
+        var type = kewords[word]
+        if (type == null) type = TokenType.ID
+        tokens.add(Token(type, row, column, word, null))
+    }
+
+    private fun number(first: Char) {
+        var number = "$first"
+        while (peek(0).isDigit()) number = "$number${next()}"
+
+        tokens.add(Token(TokenType.NUMBER, row, column, null, number.toInt()))
+    }
+
+    private fun string() {
+        var string = "\""
+        while (peek(0) != '"') string ="$string${next()}"
+        string = "$string\""
+        next()
+
+        tokens.add(Token(TokenType.STRING, row, column, null, string))
+    }
+
     private fun next(): Char = if (index < source.length) { source[index++] } else { '\u0000'}
 
     private fun peek(count: Int): Char = if (index + count < source.length) { source[index + count] } else { '\u0000' }
+
+    init {
+        kewords["func"] = TokenType.FUNC
+        kewords["class"] = TokenType.CLASS
+        kewords["var"] = TokenType.VAR
+        kewords["const"] = TokenType.CONST
+    }
 }

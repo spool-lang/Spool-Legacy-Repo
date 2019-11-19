@@ -19,7 +19,7 @@ class Lexer(private val source: String) {
             when (char) {
                 // Operators
                 '+' -> pattern(TokenType.PLUS_ASSIGN, "+=") || symbol(TokenType.PLUS, '+')
-                '-' ->  pattern(TokenType.MINUS_ASSIGN, "-=") || symbol(TokenType.MINUS, '-')
+                '-' -> pattern(TokenType.MINUS_ASSIGN, "-=") || pattern(TokenType.R_ARROW, "->") || symbol(TokenType.MINUS, '-')
                 '*' -> pattern(TokenType.MULTIPLY_ASSIGN, "*=") || symbol(TokenType.MULTIPLY, '*')
                 '/' -> pattern(TokenType.DIVIDE_ASSIGN, "/=") || symbol(TokenType.DIVIDE, '/')
                 '^' -> pattern(TokenType.POW_ASSIGN, "^=") || symbol(TokenType.POW, '^')
@@ -113,5 +113,7 @@ class Lexer(private val source: String) {
         kewords["class"] = TokenType.CLASS
         kewords["var"] = TokenType.VAR
         kewords["const"] = TokenType.CONST
+        kewords["namespace"] = TokenType.NAMESPACE
+        kewords["native"] = TokenType.NATIVE
     }
 }

@@ -13,6 +13,7 @@ enum class TokenType {
     //Other
     COMMA,
     COLIN,
+    R_ARROW,
     // Logic Operators
     LESS,
     GREATER,
@@ -45,5 +46,7 @@ enum class TokenType {
     FUNC,
     CLASS,
     VAR,
-    CONST
+    CONST,
+    NAMESPACE,
+    NATIVE
 }

@@ -4,6 +4,8 @@ import java.lang.Exception
 import kotlin.system.exitProcess
 
 val test = """
+    namespace silicon.misc
+    
     class Foo {
     
         func doThing() {
@@ -15,6 +17,8 @@ val test = """
             const bar = 122
             const baz = "Hello, world!"
         }
+        
+        native func getHash() -> String
     }
 """
 

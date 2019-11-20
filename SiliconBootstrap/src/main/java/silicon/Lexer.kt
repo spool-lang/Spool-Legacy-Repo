@@ -14,7 +14,7 @@ class Lexer(private val source: String) {
 
         var char = ' '
         while (char != '\u0000') {
-
+            consumeWhitespace()
             char = next()
             when (char) {
                 // Operators
@@ -57,6 +57,20 @@ class Lexer(private val source: String) {
         val lexedTokens = tokens
         tokens = arrayListOf()
         return lexedTokens
+    }
+
+    private fun consumeWhitespace() {
+        outer@
+        while (peek(0).isWhitespace()) {
+            when (next()) {
+                ' ', '\r', '\t' -> {}
+                '\n' -> {
+                    row++
+                    column = 0
+                }
+                else -> break@outer
+            }
+        }
     }
 
     private fun pattern(type: TokenType, pattern: String): Boolean {
@@ -115,5 +129,8 @@ class Lexer(private val source: String) {
         kewords["const"] = TokenType.CONST
         kewords["namespace"] = TokenType.NAMESPACE
         kewords["native"] = TokenType.NATIVE
+        kewords["if"] = TokenType.IF
+        kewords["else"] = TokenType.ELSE
+        kewords["return"] = TokenType.RETURN
     }
 }

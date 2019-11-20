@@ -12,10 +12,17 @@ val test = """
         
         }
         
-        func printString(str: String) {
+        func printString(str: String) -> Boolean {
             var foo = str
             const bar = 122
             const baz = "Hello, world!"
+            
+            if (true) {
+                return true
+            }
+            else {
+                return false
+            }
         }
         
         native func getHash() -> String

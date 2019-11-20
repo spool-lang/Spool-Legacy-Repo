@@ -48,5 +48,8 @@ enum class TokenType {
     VAR,
     CONST,
     NAMESPACE,
-    NATIVE
+    NATIVE,
+    IF,
+    ELSE,
+    RETURN
 }

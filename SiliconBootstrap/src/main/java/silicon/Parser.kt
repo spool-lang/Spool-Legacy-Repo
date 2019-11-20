@@ -1,37 +1,55 @@
 package silicon
 
-class Parser(val tokens: List<Token>) {
+class Parser(private val tokens: List<Token>) {
 
     private var current: Int = 0
+    private var namespace: String? = null
 
-    fun parse(): AstNode.FileNode {
-        val statements: MutableMap<String, AstNode> = mutableMapOf()
+    fun parse(): FileDB {
+        val fileDB = FileDB()
+
+        resolveNamespaceImports()
 
         while (!isAtEnd()) {
-            val node = declaration()
+            val node = topLevelDeclaration()
             if (node != null) {
                 when (node) {
-                    is AstNode.ClassNode -> statements[node.name] = node
-                    is AstNode.VariableNode -> statements[node.name] = node
+                    is AstNode.TypeNode -> fileDB[node.name] = node
+                    is AstNode.VariableNode -> fileDB[node.name] = node
                     is AstNode.FunctionNode -> {
                         val name = node.name
                         if (name != null) {
-                            statements[name] = node
+                            fileDB[name] = node
                         }
                     }
                 }
             }
         }
 
-        return AstNode.FileNode(statements, "", mapOf())
+        return fileDB
     }
 
-    private fun declaration(): AstNode? {
+    private fun resolveNamespaceImports() {
+        if (match(TokenType.NAMESPACE)) {
+            namespace = ""
+
+            while (match(TokenType.ID)) {
+                namespace = "$namespace${previous().lexeme}"
+                if (match(TokenType.DOT)) namespace = "$namespace."
+                else break
+            }
+        }
+        else {
+            throw Exception()
+        }
+    }
+
+    private fun topLevelDeclaration(): AstNode? {
         try {
             if (match(TokenType.CLASS));
-            if (match(TokenType.VAR));
-            if (match(TokenType.CONST));
-            if (match(TokenType.FUNC));
+            // if (match(TokenType.VAR));
+            // if (match(TokenType.CONST));
+            // if (match(TokenType.FUNC));
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -48,14 +66,14 @@ class Parser(val tokens: List<Token>) {
         return false
     }
 
-    private fun check(type: TokenType): Boolean = isAtEnd() || peek().type == type
+    private fun check(type: TokenType): Boolean = !isAtEnd() && peek().type == type
 
     private fun advance(): Token {
-        if (!isAtEnd()) current++
+        if (!isAtEnd()) current += 1
         return previous()
     }
 
-    private fun isAtEnd() = peek().type != TokenType.EOF
+    private fun isAtEnd() = peek().type == TokenType.EOF
 
     private fun peek() = tokens[current]
 

@@ -1,32 +1,10 @@
 package silicon
 
-import java.lang.Exception
+import kotlin.Exception
 import kotlin.system.exitProcess
 
 val test = """
-    namespace silicon.misc
-    
-    class Foo {
-    
-        func doThing() {
-        
-        }
-        
-        func printString(str: String) -> Boolean {
-            var foo = str
-            const bar = 122
-            const baz = "Hello, world!"
-            
-            if (true) {
-                return true
-            }
-            else {
-                return false
-            }
-        }
-        
-        native func getHash() -> String
-    }
+    namespace silicon.bootstrap
 """
 
 
@@ -48,4 +26,13 @@ fun main(args: Array<String>) {
     }
 
     tokens.forEach { println(it) }
+
+    val parser = Parser(tokens)
+
+    try {
+        parser.parse()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        exitProcess(-2)
+    }
 }

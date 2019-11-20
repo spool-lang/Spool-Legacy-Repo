@@ -128,6 +128,7 @@ class Lexer(private val source: String) {
         kewords["var"] = TokenType.VAR
         kewords["const"] = TokenType.CONST
         kewords["namespace"] = TokenType.NAMESPACE
+        kewords["use"] = TokenType.USE
         kewords["native"] = TokenType.NATIVE
         kewords["if"] = TokenType.IF
         kewords["else"] = TokenType.ELSE

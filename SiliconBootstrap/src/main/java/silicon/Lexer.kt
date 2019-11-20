@@ -53,7 +53,7 @@ class Lexer(private val source: String) {
                 }
             }
         }
-
+        tokens.add(Token(TokenType.EOF, row, column, null, null))
         val lexedTokens = tokens
         tokens = arrayListOf()
         return lexedTokens

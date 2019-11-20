@@ -16,7 +16,7 @@ sealed class AstNode {
 
     abstract fun visit(visitor: AstVisitor)
 
-    class FileNode(val classes: Map<String, ClassNode>, variables: Map<String, VariableNode>, val namespace: String, val imports: List<String>): AstNode() {
+    class FileNode(val statements: Map<String, AstNode>, val namespace: String, val imports: Map<String, String>): AstNode() {
         override fun visit(visitor: AstVisitor) {
             visitor.visitFile(this)
         }
@@ -34,7 +34,7 @@ sealed class AstNode {
         }
     }
 
-    class FunctionNode(val block: BlockNode, val params: List<Pair<String, String>>): AstNode() {
+    class FunctionNode(val name: String?, val block: BlockNode, val params: List<Pair<String, String>>): AstNode() {
         override fun visit(visitor: AstVisitor) {
             visitor.visitFunction(this)
         }

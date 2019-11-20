@@ -51,5 +51,7 @@ enum class TokenType {
     NATIVE,
     IF,
     ELSE,
-    RETURN
+    RETURN,
+
+    EOF
 }

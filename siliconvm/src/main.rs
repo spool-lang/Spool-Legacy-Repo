@@ -18,6 +18,7 @@ mod runtime;
 mod opcode;
 mod instance;
 mod string_pool;
+mod math;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

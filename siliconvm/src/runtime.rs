@@ -85,7 +85,7 @@ impl VM {
             OpCode::Is(type_index) => self.type_test(*type_index, frame.borrow().stack_offset),
             OpCode::Concat => self.concat(frame.borrow().stack_offset),
             OpCode::Jump(value, index) => if !value {self.jump(*index, chunk); self.jumped = true} else if self.try_jump(*index, chunk, frame.borrow().stack_offset) {self.jumped = true},
-            OpCode::Call => self.call_func(frame),
+            OpCode::Call => {},
             OpCode::Return(return_instance) => if *return_instance { return ReturnWith(self.get_stack_top(frame.borrow().stack_offset)) } else { return Return }
             OpCode::InitArray(size) => self.make_array(*size, frame.borrow().stack_offset),
             OpCode::IndexGet => self.index_get(frame.borrow().stack_offset),
@@ -275,6 +275,7 @@ impl VM {
         panic!()
     }
 
+    /*
     pub fn call_func(&mut self, previous_frame: Rc<RefCell<CallFrame>>) {
         let stack_offset = previous_frame.borrow().stack_offset;
         if let Func(func) = self.get_stack_top(stack_offset) {
@@ -317,6 +318,7 @@ impl VM {
         }
         panic!("Attempted to call non-function!")
     }
+    */
 
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
         let array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);

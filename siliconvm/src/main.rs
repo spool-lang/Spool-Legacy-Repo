@@ -25,6 +25,14 @@ fn main() {
 
     let mut vm = VM::new();
 
+    let mut chunk = Chunk::new();
+    chunk.add_const(0, UByte(255));
+
+    chunk.write(Get(true, 0));
+    chunk.write(Print);
+
+    vm.execute_chunk(Rc::new(chunk), Rc::new(RefCell::new(CallFrame::new())), vec![], vec![]);
+
     /*
     if args.len() >= 2 {
         //engine::run(PathBuf::from(&args[1]))

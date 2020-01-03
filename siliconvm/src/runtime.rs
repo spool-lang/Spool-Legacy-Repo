@@ -11,7 +11,6 @@ use crate::string_pool::StringPool;
 pub struct VM {
     pub(crate) type_registry: TypeRegistry,
     pub string_pool: StringPool,
-    chunk_size: usize,
     pub register: Register,
     pub stack: Vec<Instance>,
     pub pc : usize,
@@ -26,7 +25,6 @@ impl VM {
         VM {
             type_registry,
             string_pool,
-            chunk_size: 0,
             register: Register::new(true),
             stack: vec![],
             pc: 0,
@@ -35,7 +33,6 @@ impl VM {
     }
 
     pub fn execute_chunk(&mut self, chunk: Rc<Chunk>, frame: Rc<RefCell<CallFrame>>, args: Vec<Instance>, arg_types: Vec<Rc<Type>>) -> InstructionResult {
-        self.chunk_size = chunk.register_size as usize;
         let register_offset = frame.borrow().register_access_offset;
 
         for i in 0..args.len() {

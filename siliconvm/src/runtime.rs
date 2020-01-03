@@ -275,51 +275,6 @@ impl VM {
         panic!()
     }
 
-    /*
-    pub fn call_func(&mut self, previous_frame: Rc<RefCell<CallFrame>>) {
-        let stack_offset = previous_frame.borrow().stack_offset;
-        if let Func(func) = self.get_stack_top(stack_offset) {
-            let chunk = Rc::clone(&func.chunk);
-            let register_offset = self.register.size;
-            let new_frame = CallFrame::new_with_offset(register_offset, register_offset, stack_offset);
-            let previous_pc = self.pc;
-            self.pc = 0;
-            let args_vec: Vec<Instance> = self.split_stack(func.arity as usize, previous_frame.borrow().stack_offset);
-            let param_types: Vec<Rc<Type>> = func.params.clone();
-
-            let mut i = 0;
-            for param in param_types {
-                if !param.is(args_vec.get(0).unwrap()) {panic!("!!!")}
-                i += 1;
-            }
-
-            let stack_offset = self.stack.len();
-
-            let func = Rc::clone(&func);
-
-
-            let result = self.execute_chunk(chunk, Rc::new(RefCell::new(new_frame)), args_vec, func.params.clone());
-
-            self.register.truncate(register_offset);
-            self.stack.truncate(stack_offset);
-            self.pc = previous_pc;
-
-            let return_type = func.return_type.clone();
-            if &*return_type.canonical_name != "silicon.lang.Void" {
-                match result {
-                    ReturnWith(instance) => {
-                        if !return_type.is(&instance)  { panic!()}
-                        self.stack.push(instance)
-                    },
-                    _ => panic!()
-                }
-            }
-            return;
-        }
-        panic!("Attempted to call non-function!")
-    }
-    */
-
     pub fn make_array(&mut self, array_size: u16, stack_offset: usize) {
         let array : Vec<Instance> = self.split_stack(array_size as usize, stack_offset);
         let mut _type = self.type_registry.get(0);

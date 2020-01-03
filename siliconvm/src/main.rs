@@ -6,7 +6,7 @@ use silicon::Config;
 use std::path::PathBuf;
 use crate::runtime::{VM, CallFrame};
 use crate::opcode::OpCode::*;
-use crate::instance::{Instance, Instance::*, Function, Type};
+use crate::instance::{Instance, Instance::*, Type};
 use std::intrinsics::transmute;
 use crate::opcode::Chunk;
 use std::rc::Rc;

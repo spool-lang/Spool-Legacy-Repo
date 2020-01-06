@@ -8,6 +8,110 @@ use crate::runtime::InstructionResult::{Return, Continue, ReturnWith, ExitScope}
 use std::cell::RefCell;
 use crate::string_pool::StringPool;
 
+pub struct NewVM {
+    pub(crate) string_pool: StringPool,
+    pub(crate) type_registry: TypeRegistry,
+    pub(crate) register: Register,
+    pub(crate) stack: Vec<Instance>,
+    pub(crate) call_stack: Vec<Rc<RefCell<NewCallFrame>>>
+}
+
+impl NewVM {
+    pub  fn new() -> NewVM {
+        let mut string_pool = StringPool::new();
+        let mut type_registry = TypeRegistry::new(&mut string_pool);
+        NewVM {
+            string_pool,
+            type_registry,
+            register: Register::new(true),
+            stack: vec![],
+            call_stack: vec![]
+        }
+    }
+
+    pub fn run(&mut self, main: Chunk) {
+        let rc = Rc::new(main);
+        let frame = NewCallFrame::new();
+
+        self.call_stack.push(Rc::new(RefCell::new(frame)));
+        self.execute_chunk(rc)
+    }
+
+    fn execute_chunk(&mut self, chunk: Rc<Chunk>) {
+        loop {
+
+        }
+    }
+
+    fn current_frame(&mut self) -> Rc<RefCell<NewCallFrame>> {
+        let option = self.call_stack.pop();
+        if let Some(frame) = option {
+            self.call_stack.push(Rc::clone(&frame));
+            return frame
+        }
+        panic!()
+    }
+
+    fn execute_instruction(&mut self, code: OpCode) {
+        match code {
+            OpCode::GetTrue => self.push_stack(Bool(true)),
+            OpCode::GetFalse => self.push_stack(Bool(false)),
+            OpCode::Get(from_const, index) => {},
+            OpCode::Declare(is_const, type_index) => {},
+            OpCode::Set(index) => {},
+            OpCode::Add => {},
+            OpCode::Subtract => {},
+            OpCode::Multiply => {},
+            OpCode::Divide => {},
+            OpCode::Power => {},
+            OpCode::IntNegate => {},
+            OpCode::LogicNegate => {},
+            OpCode::Less => {},
+            OpCode::Greater => {},
+            OpCode::LessOrEq => {},
+            OpCode::GreaterOrEq => {},
+            OpCode::Eq => {},
+            OpCode::NotEq => {},
+            OpCode::Is(_) => {},
+            OpCode::Concat => {},
+            OpCode::Jump(_, _) => {},
+            OpCode::Call => {},
+            OpCode::Return(_) => {},
+            OpCode::InitArray(_) => {},
+            OpCode::IndexGet => {},
+            OpCode::IndexSet => {},
+            OpCode::EnterScope(_) => {},
+            OpCode::ExitScope => {},
+            OpCode::Print => {},
+        }
+    }
+
+    fn push_stack(&mut self, instance: Instance) {
+        self.stack.push(instance)
+    }
+}
+
+pub struct NewCallFrame {
+    register_offset: u16,
+    stack_offset: usize,
+    ip: usize
+}
+
+impl NewCallFrame {
+    fn new(register_offset: u16, stack_offset: usize) -> NewCallFrame {
+        NewCallFrame {
+            register_offset,
+            stack_offset,
+            ip: 0
+        }
+    }
+}
+
+pub enum NewInstructionResult {
+    Continue,
+    Jump(u16)
+}
+
 pub struct VM {
     pub(crate) type_registry: TypeRegistry,
     pub string_pool: StringPool,

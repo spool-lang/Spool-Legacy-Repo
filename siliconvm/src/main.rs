@@ -15,6 +15,7 @@ use crate::string_pool::StringPool;
 use std::cell::RefCell;
 
 mod runtime;
+mod vm;
 mod opcode;
 mod instance;
 mod string_pool;
